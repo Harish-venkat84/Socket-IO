@@ -7,17 +7,13 @@ import {
   uniCoinDcxSocketUrl,
   zebacusSocketUrl,
 } from "./index.js";
+import axios from "axios";
 
 const apiUrl = feeder === "staging" ? stagingSymbolsApi : feeder === "unicoindcx" ? unicoinDcxSymbolsApi : zebacusSymbolsApi;
-async function symbolsData() {
-  const response = await fetch(apiUrl);
-  const data = await response.json();
-  return data;
-}
 
 async function getSymbols() {
-  let symbolsArray = await symbolsData().then((data) =>
-    data.data
+  let symbolsArray = await axios.get(apiUrl).then((response) =>
+    response.data.data
       .filter((symbol) => symbol.spot && symbol?.is_active)
       .map((data) => {
         if (feeder === "staging") return stagingSocketUrl + "feeder-" + data.symbol;
@@ -25,6 +21,7 @@ async function getSymbols() {
         else return zebacusSocketUrl + "feeder-" + data.symbol;
       })
   );
+
   return symbolsArray;
 }
 
