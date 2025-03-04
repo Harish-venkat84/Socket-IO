@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 import getSymbols from "./getSymbols.js";
-import { setIntervalSeconds, socketIntervalSeconds, activeSocketsIntervalSeconds } from "./index.js";
+import { setIntervalSeconds, socketIntervalSeconds, activeSocketsIntervalSeconds, socketCandleStickSeconds } from "./index.js";
 import { getTime, sendAlertMessage, sendTotalActiveSymbolsMessage } from "./messages.js";
 import startTelegarmBot from "./telegramBotCommands.js";
 import { startSlack } from "./slackBot.js";
@@ -79,16 +79,10 @@ setInterval(() => {
   // sendTotalActiveSymbolsMessage(socketDetails, listOfSymbols.size);
 }, setIntervalSeconds * 1000);
 
-setInterval(() => validatingCandlestickFeeder(), 180 * 1000);
+setInterval(() => validatingCandlestickFeeder(), socketCandleStickSeconds * 1000);
 
 async function validateFeederAndCandlestick() {
   socketDetails.forEach((socket, url) => {
-    // if (Date.now() - socket.candlestick > 180 * 1000) {
-    //   sendAlertMessage(url, "candlestickDown");
-
-    //   socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: false });
-    // }
-
     if (Date.now() - socket.order_book > socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookDown");
 
@@ -97,7 +91,7 @@ async function validateFeederAndCandlestick() {
   });
 
   socketDetails.forEach((socket, url) => {
-    if (!socket.candlestick_status && Date.now() - socket.candlestick < 180 * 1000) {
+    if (!socket.candlestick_status && Date.now() - socket.candlestick < socketCandleStickSeconds * 1000) {
       sendAlertMessage(url, "candlestickUp");
 
       socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: true });
@@ -113,7 +107,7 @@ async function validateFeederAndCandlestick() {
 
 function validatingCandlestickFeeder() {
   socketDetails.forEach((socket, url) => {
-    if (Date.now() - socket.candlestick > 180 * 1000) {
+    if (Date.now() - socket.candlestick > socketCandleStickSeconds * 1000) {
       sendAlertMessage(url, "candlestickDown");
 
       socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: false });

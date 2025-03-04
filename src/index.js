@@ -6,6 +6,7 @@ const messageApp = process.env.MESSAGE_APP;
 
 const setIntervalSeconds = Number(process.env.SETENTERVAL_SECONDS);
 const socketIntervalSeconds = Number(process.env.SOCKET_INTERVAL_SECONDS);
+const socketCandleStickSeconds = Number(process.env.SOCKET_CANDLESTICK_SECONDS);
 const activeSocketsIntervalSeconds = Number(process.env.ACTIVE_SOCKETS_INTERVAL_SECONDS);
 
 const slackStagingBotToken = process.env.SLACK_STAGING_BOT_TOKEN;
@@ -64,6 +65,7 @@ export {
   messageApp,
   setIntervalSeconds,
   socketIntervalSeconds,
+  socketCandleStickSeconds,
   activeSocketsIntervalSeconds,
   getTelegramBotToken,
   telegramBotChatId,
