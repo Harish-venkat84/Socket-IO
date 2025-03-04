@@ -1,0 +1,20 @@
+{
+  "name": "socketio",
+  "version": "1.0.0",
+  "main": "socketIO.js",
+  "scripts": {
+    "start": "node -r dotenv/config src/socketIO.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "description": "",
+  "dependencies": {
+    "@slack/bolt": "^4.2.1",
+    "axios": "^1.8.1",
+    "dotenv": "^16.4.7",
+    "node-telegram-bot-api": "^0.66.0",
+    "socket.io-client": "^4.8.1"
+  }
+}
