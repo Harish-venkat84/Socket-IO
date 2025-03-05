@@ -53,11 +53,11 @@ async function startTelegarmBot() {
 
       listOfSymbols.forEach((url) => {
         let { exchange, symbol, exchangeUrl } = getExchangeAndSymbol(url);
-        let { order_book_lastUpdated, candlestick_lastUpdated } = socketDetails.get(url);
+        let { order_book_lastUpdated, candlestick_lastUpdated, ticker_lastUpdated } = socketDetails.get(url);
         if (userText.toLowerCase() === symbol.toLowerCase()) {
           bot.sendMessage(
             chatId,
-            `Symbol: ${symbol}\nExchange: ${exchange}\nOrder Book: ${order_book_lastUpdated}\nCandlestick: ${candlestick_lastUpdated}`
+            `Symbol: ${symbol}\nExchange: ${exchange}\n📚 Order Book last updated: ${order_book_lastUpdated}\n📈 Candlestick last updated: ${candlestick_lastUpdated}\n➤ Ticker last updated: ${ticker_lastUpdated}`
           );
         }
       });

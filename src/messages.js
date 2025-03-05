@@ -1,41 +1,55 @@
 import { slackChannel } from "./slack.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 import { messageApp, feeder } from "./index.js";
+import { socketIntervalSeconds, socketCandleStickSeconds, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
 
 function slackMessage(url, alertMessage) {
   const { exchange, symbol, exchangeUrl } = getExchangeAndSymbol(url);
+  const websiteUrl = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 
   let finalMessage;
 
   switch (alertMessage) {
     case "orderBookDown":
-      finalMessage = getTime() + ` - ❌ *"${symbol}"* 📚 order book down for *"60 seconds"* seconds, need to resolve ASAP - ${exchange}`;
+      finalMessage =
+        getTime() +
+        `\n❌ *"${symbol}"* - 📚 order book down for *"${socketIntervalSeconds} seconds"* seconds, need to resolve ASAP - ${exchange}\nUrl: ${
+          websiteUrl + symbol
+        }`;
       break;
 
     case "orderBookUp":
-      finalMessage = getTime() + ` - ✅ *"${symbol}"* 📚 order book issue resolved, back to normal - ${exchange}`;
+      finalMessage = getTime() + `\n✅ *"${symbol}"* - 📚 order book issue resolved, back to normal - ${exchange}\nUrl: ${websiteUrl + symbol}`;
       break;
 
     case "candlestickDown":
-      finalMessage = getTime() + ` - ❌ *"${symbol}"* 📈 candlestick feed down for *"3 minutes"* seconds, need to resolve ASAP - ${exchange}`;
+      finalMessage =
+        getTime() +
+        `\n❌ *"${symbol}"* - 📈 candlestick feed down for *"${socketCandleStickSeconds / 60} minutes"*, need to resolve ASAP - ${exchange}\nUrl: ${
+          websiteUrl + symbol
+        }`;
       break;
 
     case "candlestickUp":
-      finalMessage = getTime() + ` - ✅ *"${symbol}"* 📈 candlestick feed issue resolved, back to normal - ${exchange}`;
+      finalMessage = getTime() + `\n✅ *"${symbol}"* - 📈 candlestick feed issue resolved, back to normal - ${exchange}\nUrl: ${websiteUrl + symbol}`;
       break;
 
     case "symbolChanges":
       finalMessage =
         getTime() +
-        ` - 🔄 *"${symbol}"*  symbol status has been changed from Active to "Inactive". The WebSocket connection for this symbol will now be disconnected - ${exchange}`;
+        `\n🔄 *"${symbol}"* - symbol status has been changed from Active to "Inactive".The WebSocket connection for this symbol will now be disconnected - ${exchange}\nUrl: ${
+          websiteUrl + symbol
+        }`;
       break;
 
     case "newSymbol":
-      finalMessage = getTime() + ` - 🚀 *"${symbol}"* New symbol has been added to the exchange. WebSocket connections updated - ${exchange}`;
+      finalMessage =
+        getTime() +
+        `\n🚀 *"${symbol}"* - New symbol has been added to the exchange. WebSocket connections updated - ${exchange}\nUrl: ${websiteUrl + symbol}`;
       break;
 
     default:
-      finalMessage = getTime() + ` - ⚠️ *"${symbol}" Socket Disconnected!!* - ${exchange}`;
+      finalMessage = getTime() + `\n⚠️ *"${symbol}" - Socket Disconnected!!* - ${exchange}\nUrl: ${websiteUrl + symbol}`;
   }
 
   slackChannel(finalMessage);

@@ -23,7 +23,9 @@ function connectSockets(url) {
       candlestick_status: true,
       candlestick: Date.now(),
       candlestick_lastUpdated: getTime(),
+      ticker_lastUpdated: getTime(),
       disconnected: false,
+      last_price: "last price not updated",
     });
   });
 
@@ -43,6 +45,14 @@ function connectSockets(url) {
         disconnected: false,
         candlestick_lastUpdated: getTime(),
         connection: true,
+      });
+    } else if (data.event === "ticker") {
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        disconnected: false,
+        connection: true,
+        ticker_lastUpdated: getTime(),
+        last_price: data.data.last_price,
       });
     }
   });
@@ -71,12 +81,18 @@ async function monitorSockets() {
 
 monitorSockets();
 
+let count = 0;
+
 setInterval(() => {
+  count++;
   console.log(getTime(), "🔍 Checking for inactive sockets...");
   validateFeederAndCandlestick();
   adminSymbolsValidation();
   socketDisconnected();
-  // sendTotalActiveSymbolsMessage(socketDetails, listOfSymbols.size);
+  if (count === activeSocketsIntervalSeconds) {
+    sendTotalActiveSymbolsMessage(socketDetails, listOfSymbols.size);
+    count = 0;
+  }
 }, setIntervalSeconds * 1000);
 
 setInterval(() => validatingCandlestickFeeder(), socketCandleStickSeconds * 1000);
@@ -146,7 +162,6 @@ async function adminSymbolsValidation() {
 async function socketDisconnected() {
   socketDetails.forEach((socket, url) => {
     if (socket.disconnected && !socket.connection) {
-      console.log(getTime(), "❌ Disconnected from", url);
       socketDetails.get(url).socket.off();
       socketDetails.get(url).socket.disconnect();
       connectSockets(url);
@@ -158,6 +173,6 @@ async function socketDisconnected() {
 
 // startTelegarmBot();
 
-startSlack();
+setTimeout(() => startSlack(), 5000);
 
 export { listOfSymbols, socketDetails };

@@ -14,7 +14,7 @@ const apiUrl = feeder === "staging" ? stagingSymbolsApi : feeder === "unicoindcx
 async function getSymbols() {
   let symbolsArray = await axios.get(apiUrl).then((response) =>
     response.data.data
-      .filter((symbol) => symbol.spot && symbol?.is_active)
+      .filter((symbol) => symbol?.spot && symbol?.is_active && !symbol?.is_new)
       .map((data) => {
         if (feeder === "staging") return stagingSocketUrl + "feeder-" + data.symbol;
         else if (feeder === "unicoindcx") return uniCoinDcxSocketUrl + "feeder-" + data.symbol;
