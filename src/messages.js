@@ -124,10 +124,6 @@ function sendAlertMessage(url, alertMessage) {
   }
 }
 
-// function sendTotalActiveSymbolsMessage(totalConnectedSymbols, totalActiveSymbols) {
-//   telegramBot(`${telegramBotCommandStatus(totalConnectedSymbols, totalActiveSymbols)}`, "");
-// }
-
 function telegramBotCommandStatus(activeSockets, listOfSymbols) {
   const exchange = `${feeder === "staging" ? "PIX-Staging" : feeder === "unicoindcx" ? "UniCoinDCX" : "Zebacus"}`;
   let count = 0;
@@ -138,7 +134,8 @@ function telegramBotCommandStatus(activeSockets, listOfSymbols) {
   });
 
   return activeSockets.size > 0 && listOfSymbols.size > 0
-    ? `${getTime()} - ✅ Feeder current status: 
+    ? `${getTime()}
+        \n✅ Sockets current status: 
         \nExchange: ${exchange} 
         \nTotal Active Symbols in the Exchange: ${listOfSymbols.size + disconnectSymbol.size}
         \nTotal Active Sockets: ${count}
@@ -148,4 +145,4 @@ function telegramBotCommandStatus(activeSockets, listOfSymbols) {
     : "No active sockets... please wait for socket to connect";
 }
 
-export { sendAlertMessage, getTime, sendTotalActiveSymbolsMessage, telegramBotCommandStatus };
+export { sendAlertMessage, getTime, telegramBotCommandStatus };

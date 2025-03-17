@@ -90,7 +90,7 @@ async function start() {
     adminSymbolsValidation();
     socketDisconnected();
     if (count === activeSocketsIntervalSeconds) {
-      telegramBot(`${telegramBotCommandStatus(socketDetails, listOfSymbols.size)}`, "");
+      telegramBot(`${telegramBotCommandStatus(socketDetails, listOfSymbols)}`, "");
       count = 0;
     }
   }, setIntervalSeconds * 1000);
