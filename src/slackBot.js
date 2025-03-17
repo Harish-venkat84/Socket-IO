@@ -137,7 +137,7 @@ async function listOfDisconnectedSymbols(say) {
   } else {
     message = "*Zero* symbols disconnected manually";
   }
-  await say(message);
+  await say(`List of manually disconnected symbols:\n${message}`);
 }
 
 async function addSymbolsToDisconnect(userText, say) {
@@ -200,7 +200,7 @@ async function listOfPrioritySymbols(say) {
   } else {
     message = "*Zero* priority symbols added";
   }
-  await say(message);
+  await say(`List of priority symbols:\n${message}`);
 }
 
 function messageSymbolNotPresent(userText) {
