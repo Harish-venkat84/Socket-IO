@@ -54,6 +54,8 @@ async function startSlack() {
     customMessages(userText, message, say);
 
     messageStatus = false;
+    addedDisconnectSymbol = false;
+    addedPrioritySymbols = false;
   });
 
   // Start the bot
@@ -120,6 +122,8 @@ async function helpCommand(say) {
     *-symbol name* eg(-ETHUSDT) - To manually disconnect the socket for this symbol\n
     *+symbol name* eg(+ETHUSDT) - To re-connect the manually disconnect socket\n
     *disconnected symbols* - list of symbols manually disconnected by slack user\n
+    *add symbol name* eg(add ETHUSDT) - To add to priority symbols for candlestick 60 seconds\n
+    *delete symbol name* eg(delete ETHUSDT) - To delete the symbols from priority\n
     *priority symbols* - list of symbols added to priority for candlestick 60 seconds`);
 }
 
