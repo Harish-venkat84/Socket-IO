@@ -172,7 +172,6 @@ async function addPrioritySymbols(userText, say) {
       addedPrioritySymbols = true;
       prioritySymbols.add(userText.split(" ")[1]);
       await say(`*${userText.split(" ")[1].toUpperCase()}* Added`);
-      console.log("added", prioritySymbols);
     }
   });
 
