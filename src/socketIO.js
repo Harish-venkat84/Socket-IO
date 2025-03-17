@@ -1,10 +1,10 @@
 import { io } from "socket.io-client";
 import getSymbols from "./getSymbols.js";
 import { setIntervalSeconds, socketIntervalSeconds, activeSocketsIntervalSeconds, socketCandleStickSeconds } from "./index.js";
-import { getTime, sendAlertMessage, sendTotalActiveSymbolsMessage } from "./messages.js";
+import { getTime, sendAlertMessage, telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot } from "./telegramBotCommands.js";
-import { startSlack, manuallyconnected, prioritySymbols } from "./slackBot.js";
-import { getExchangeAndSymbol } from "./telegramBot.js";
+import { startSlack, manuallyDisconnected, prioritySymbols, disconnectSymbol } from "./slackBot.js";
+import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 
 let listOfSymbols;
 const socketDetails = new Map();
@@ -90,7 +90,7 @@ async function start() {
     adminSymbolsValidation();
     socketDisconnected();
     if (count === activeSocketsIntervalSeconds) {
-      sendTotalActiveSymbolsMessage(socketDetails, listOfSymbols.size);
+      telegramBot(`${telegramBotCommandStatus(socketDetails, listOfSymbols.size)}`, "");
       count = 0;
     }
   }, setIntervalSeconds * 1000);
@@ -141,9 +141,9 @@ async function adminSymbolsValidation() {
       socketDetails.get(url).socket.disconnect();
       socketDetails.delete(url);
       let { symbol } = getExchangeAndSymbol(url);
-      if (manuallyconnected.get(symbol.toLowerCase())?.disconnected) {
+      if (manuallyDisconnected.get(symbol.toLowerCase())?.disconnected) {
         console.log(getTime(), "user manually disconnected the socket for this symbol", url);
-        manuallyconnected.set(symbol.toLowerCase(), { disconnected: false });
+        manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: false });
       } else {
         sendAlertMessage(url, "symbolChanges");
         console.log(
@@ -151,6 +151,15 @@ async function adminSymbolsValidation() {
           "🔄 Symbol status has been changed from Active to Inactive. The WebSocket connection for this symbol will now be disconnected -",
           url
         );
+
+        if (disconnectSymbol.has(symbol.toLowerCase())) {
+          disconnectSymbol.delete(symbol.toLowerCase());
+          manuallyDisconnected.delete(symbol.toLowerCase());
+        }
+
+        if (prioritySymbols.has(symbol.toLowerCase())) {
+          prioritySymbols.delete(symbol.toLowerCase());
+        }
       }
     }
   });
@@ -160,9 +169,9 @@ async function adminSymbolsValidation() {
       listOfSymbols.add(url);
       connectSockets(url);
       let { symbol } = getExchangeAndSymbol(url);
-      if (manuallyconnected.get(symbol.toLowerCase())?.disconnected) {
+      if (manuallyDisconnected.get(symbol.toLowerCase())?.disconnected) {
         console.log(getTime(), "user manually re-connected the socket for this symbol", url);
-        manuallyconnected.set(symbol.toLowerCase(), { disconnected: false });
+        manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: false });
       } else {
         sendAlertMessage(url, "newSymbol");
         console.log(getTime(), "🚀 New symbol has been added to the exchange. WebSocket connections updated -", url);

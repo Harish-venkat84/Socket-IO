@@ -1,7 +1,7 @@
 import { slackChannel } from "./slack.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 import { messageApp, feeder } from "./index.js";
-import { disconnectSymbol } from "./slackBot.js";
+import { disconnectSymbol, prioritySymbols } from "./slackBot.js";
 import { socketIntervalSeconds, socketCandleStickSeconds, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
 
 function slackMessage(url, alertMessage) {
@@ -124,16 +124,9 @@ function sendAlertMessage(url, alertMessage) {
   }
 }
 
-function sendTotalActiveSymbolsMessage(totalConnectedSymbols, totalActiveSymbols) {
-  let count = 0;
-  totalConnectedSymbols.forEach((socket) => {
-    if (socket.socket.connected) {
-      count++;
-    }
-  });
-
-  telegramBot(`${getTime()} - ✅ Feeder running status: \nTotal Active Sockets: ${count} \nTotal Active Symbols: ${totalActiveSymbols}`, "");
-}
+// function sendTotalActiveSymbolsMessage(totalConnectedSymbols, totalActiveSymbols) {
+//   telegramBot(`${telegramBotCommandStatus(totalConnectedSymbols, totalActiveSymbols)}`, "");
+// }
 
 function telegramBotCommandStatus(activeSockets, listOfSymbols) {
   const exchange = `${feeder === "staging" ? "PIX-Staging" : feeder === "unicoindcx" ? "UniCoinDCX" : "Zebacus"}`;
@@ -147,11 +140,12 @@ function telegramBotCommandStatus(activeSockets, listOfSymbols) {
   return activeSockets.size > 0 && listOfSymbols.size > 0
     ? `${getTime()} - ✅ Feeder current status: 
         \nExchange: ${exchange} 
-        \nTotal Active Sockets: ${count} 
-        \nTotal Active Symbols: ${listOfSymbols.size}
-        \nTotal Manually disconnected symbols: ${disconnectSymbol.size}
+        \nTotal Active Symbols in the Exchange: ${listOfSymbols.size + disconnectSymbol.size}
+        \nTotal Active Sockets: ${count}
+        \nTotal Manually Disconnected Symbols: ${disconnectSymbol.size}
+        \nTotal Priority Symbols: ${prioritySymbols.size}
         `
-    : "No active sockets... please wait for the feeders to connect";
+    : "No active sockets... please wait for socket to connect";
 }
 
 export { sendAlertMessage, getTime, sendTotalActiveSymbolsMessage, telegramBotCommandStatus };

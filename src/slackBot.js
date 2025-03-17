@@ -20,7 +20,7 @@ import {
 const { App } = pkg;
 let messageStatus = false;
 const disconnectSymbol = new Set();
-const manuallyconnected = new Map();
+const manuallyDisconnected = new Map();
 const prioritySymbols = new Set();
 const websiteUrl = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 let addedDisconnectSymbol = false;
@@ -134,10 +134,10 @@ async function listOfDisconnectedSymbols(say) {
     disconnectSymbol.forEach((value) => {
       message = message === undefined ? `*${value.toUpperCase()}*\n` : message + `*${value.toUpperCase()}*\n`;
     });
+    await say(`List of manually disconnected symbols:\n${message}`);
   } else {
-    message = "*Zero* symbols disconnected manually";
+    await say("*Zero* symbols disconnected manually");
   }
-  await say(`List of manually disconnected symbols:\n${message}`);
 }
 
 async function addSymbolsToDisconnect(userText, say) {
@@ -147,7 +147,7 @@ async function addSymbolsToDisconnect(userText, say) {
       addedDisconnectSymbol = true;
       disconnectSymbol.add(userText.split("-")[1].toLowerCase());
       await say(`*${userText.split("-")[1].toUpperCase()}* disconnected manually...`);
-      manuallyconnected.set(symbol.toLowerCase(), { disconnected: true });
+      manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
     }
   });
   if (!addedDisconnectSymbol) {
@@ -159,7 +159,7 @@ async function deleteSmbolsDisconnectMap(userText, say) {
   if (disconnectSymbol.has(userText.split("+")[1].toLowerCase())) {
     disconnectSymbol.delete(userText.split("+")[1].toLowerCase());
     await say(`*${userText.split("+")[1].toUpperCase()}* connected manually...`);
-    manuallyconnected.set(symbol.toLowerCase(), { disconnected: true });
+    manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
   } else {
     await say(messageSymbolNotPresent(userText.split("+")[1]));
   }
@@ -196,14 +196,14 @@ async function listOfPrioritySymbols(say) {
     prioritySymbols.forEach((value) => {
       message = message === undefined ? `*${value.toUpperCase()}*\n` : message + `*${value.toUpperCase()}*\n`;
     });
+    await say(`List of priority symbols:\n${message}`);
   } else {
-    message = "*Zero* priority symbols added";
+    await say("*Zero* priority symbols added");
   }
-  await say(`List of priority symbols:\n${message}`);
 }
 
 function messageSymbolNotPresent(userText) {
   return `🙇 *"${userText}"*: Sorry, this symbol is currently not *active/present* on the exchange or please check the *symbol name!*`;
 }
 
-export { startSlack, disconnectSymbol, manuallyconnected, prioritySymbols };
+export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols };
