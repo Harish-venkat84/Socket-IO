@@ -13,7 +13,6 @@ import {
 } from "./index.js";
 
 const telegramBotApiUrl = `https://api.telegram.org/bot${getTelegramBotToken()}/sendPhoto`;
-
 const imageUrl = feeder === "staging" ? stagingLogo : feeder === "unicoindcx" ? unicoinDcxLogo : zebacusLogo;
 const url = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 

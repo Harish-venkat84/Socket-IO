@@ -1,6 +1,7 @@
 import { slackChannel } from "./slack.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 import { messageApp, feeder } from "./index.js";
+import { disconnectSymbol } from "./slackBot.js";
 import { socketIntervalSeconds, socketCandleStickSeconds, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
 
 function slackMessage(url, alertMessage) {
@@ -8,48 +9,48 @@ function slackMessage(url, alertMessage) {
   const websiteUrl = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 
   let finalMessage;
+  let webUrl = websiteUrl + symbol;
 
   switch (alertMessage) {
     case "orderBookDown":
       finalMessage =
         getTime() +
-        `\n❌ *"${symbol}"* - 📚 order book down for *"${socketIntervalSeconds} seconds"* seconds, need to resolve ASAP - ${exchange}\nUrl: ${
-          websiteUrl + symbol
-        }`;
+        `\n❌ *"${symbol}"* - 📚 order book down for *"${socketIntervalSeconds} seconds"* seconds, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "orderBookUp":
-      finalMessage = getTime() + `\n✅ *"${symbol}"* - 📚 order book issue resolved, back to normal - ${exchange}\nUrl: ${websiteUrl + symbol}`;
+      finalMessage = getTime() + `\n✅ *"${symbol}"* - 📚 order book issue resolved, back to normal - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "candlestickDown":
       finalMessage =
         getTime() +
-        `\n❌ *"${symbol}"* - 📈 candlestick feed down for *"${socketCandleStickSeconds / 60} minutes"*, need to resolve ASAP - ${exchange}\nUrl: ${
-          websiteUrl + symbol
-        }`;
+        `\n❌ *"${symbol}"* - 📈 candlestick down for *"${
+          socketCandleStickSeconds / 60
+        } minutes"*, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
+      break;
+
+    case "candlestickDownOneMinute":
+      finalMessage = getTime() + `\n❌ *"${symbol}"* - 📈 candlestick down for *"1 minute"*, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "candlestickUp":
-      finalMessage = getTime() + `\n✅ *"${symbol}"* - 📈 candlestick feed issue resolved, back to normal - ${exchange}\nUrl: ${websiteUrl + symbol}`;
+      finalMessage = getTime() + `\n✅ *"${symbol}"* - 📈 candlestick issue resolved, back to normal - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "symbolChanges":
       finalMessage =
         getTime() +
-        `\n🔄 *"${symbol}"* - symbol status has been changed from Active to "Inactive".The WebSocket connection for this symbol will now be disconnected - ${exchange}\nUrl: ${
-          websiteUrl + symbol
-        }`;
+        `\n🔄 *"${symbol}"* - symbol status has been changed from Active to "Inactive".The WebSocket connection for this symbol will now be disconnected - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "newSymbol":
       finalMessage =
-        getTime() +
-        `\n🚀 *"${symbol}"* - New symbol has been added to the exchange. WebSocket connections updated - ${exchange}\nUrl: ${websiteUrl + symbol}`;
+        getTime() + `\n🚀 *"${symbol}"* - New symbol has been added to the exchange. WebSocket connections updated - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     default:
-      finalMessage = getTime() + `\n⚠️ *"${symbol}" - Socket Disconnected!!* - ${exchange}\nUrl: ${websiteUrl + symbol}`;
+      finalMessage = getTime() + `\n⚠️ *"${symbol}" - Socket Disconnected!!* - *${exchange}*\n🔗: ${webUrl}`;
   }
 
   slackChannel(finalMessage);
@@ -62,33 +63,39 @@ function telegramBotMessage(url, alertMessage) {
 
   switch (alertMessage) {
     case "orderBookDown":
-      finalMessage = getTime() + ` - ❌ "${symbol}" feeder down for 30 seconds seconds, need to resolve ASAP - ${exchange}`;
+      finalMessage =
+        getTime() + `\n❌ "${symbol}" - 📚 order book down for "${socketIntervalSeconds} seconds" seconds, need to resolve ASAP - ${exchange}`;
       break;
 
     case "orderBookUp":
-      finalMessage = getTime() + ` - ✅ "${symbol}" feeder issue resolved, back to normal - ${exchange}`;
+      finalMessage = getTime() + `\n✅ "${symbol}" - 📚 order book issue resolved, back to normal - ${exchange}`;
       break;
 
     case "candlestickDown":
-      finalMessage = getTime() + ` - ❌ "${symbol}" candlestick feed down for 30 seconds seconds, need to resolve ASAP - ${exchange}`;
+      finalMessage =
+        getTime() + `\n❌ "${symbol}" - 📈 candlestick down for "${socketCandleStickSeconds / 60} minutes", need to resolve ASAP - ${exchange}`;
+      break;
+
+    case "candlestickDownOneMinute":
+      finalMessage = getTime() + `\n❌ "${symbol}" - 📈 candlestick down for "1 minute", need to resolve ASAP - ${exchange}`;
       break;
 
     case "candlestickUp":
-      finalMessage = getTime() + ` - ✅ "${symbol}" candlestick feed issue resolved, back to normal - ${exchange}`;
+      finalMessage = getTime() + `\n✅ "${symbol}" - 📈 candlestick issue resolved, back to normal - ${exchange}`;
       break;
 
     case "symbolChanges":
       finalMessage =
         getTime() +
-        ` - 🔄 "${symbol}"  symbol status has been changed from Active to "Inactive". The WebSocket connection for this symbol will now be disconnected - ${exchange}`;
+        `\n🔄 "${symbol}" - symbol status has been changed from Active to "Inactive".The WebSocket connection for this symbol will now be disconnected - ${exchange}`;
       break;
 
     case "newSymbol":
-      finalMessage = getTime() + ` - 🚀 "${symbol}" New symbol has been added to the exchange. WebSocket connections updated - ${exchange}`;
+      finalMessage = getTime() + `\n🚀 "${symbol}" - New symbol has been added to the exchange. WebSocket connections updated - ${exchange}`;
       break;
 
     default:
-      finalMessage = getTime() + ` - ⚠️ "${symbol}" Socket Disconnected!! - ${exchange}`;
+      finalMessage = getTime() + `\n⚠️ "${symbol}" - Socket Disconnected!! - ${exchange}`;
   }
 
   telegramBot(finalMessage, symbol);
@@ -138,9 +145,12 @@ function telegramBotCommandStatus(activeSockets, listOfSymbols) {
   });
 
   return activeSockets.size > 0 && listOfSymbols.size > 0
-    ? `${getTime()} - ✅ Feeder current status: \nExchange: ${exchange} \nTotal Active Sockets: ${count} \nTotal Active Symbols: ${
-        listOfSymbols.size
-      }`
+    ? `${getTime()} - ✅ Feeder current status: 
+        \nExchange: ${exchange} 
+        \nTotal Active Sockets: ${count} 
+        \nTotal Active Symbols: ${listOfSymbols.size}
+        \nTotal Manually disconnected symbols: ${disconnectSymbol.size}
+        `
     : "No active sockets... please wait for the feeders to connect";
 }
 

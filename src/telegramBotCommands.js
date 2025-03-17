@@ -19,9 +19,9 @@ async function setCommands(bot) {
 }
 
 // Initialize bot and set commands after a delay
-async function startTelegarmBot() {
-  let bot = new TelegramBot(getTelegramBotToken(), { polling: true });
+let bot = new TelegramBot(getTelegramBotToken(), { polling: true });
 
+async function startTelegarmBot() {
   setTimeout(() => {
     setCommands(bot);
 
@@ -73,4 +73,11 @@ async function startTelegarmBot() {
   }, 5000); // Small delay to ensure bot is ready
 }
 
-export default startTelegarmBot;
+function disconnectBot() {
+  bot.removeAllListeners();
+  bot.stopPolling();
+  bot.off();
+  bot.close();
+}
+
+export { startTelegarmBot, disconnectBot };
