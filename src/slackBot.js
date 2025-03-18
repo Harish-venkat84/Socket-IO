@@ -110,6 +110,10 @@ async function customMessages(userText, message, say) {
     deletePrioritySymbols(userText, say);
   } else if (userText === "priority symbols") {
     listOfPrioritySymbols(say);
+  } else if (disconnectSymbol.has(userText)) {
+    await say(
+      `*${userText.toUpperCase()}*, This symbol socket disconnected by slack user\nTo reconnect use this command "+${userText.toUpperCase()}" or use the *"help"* command to see the list of commands`
+    );
   } else if (!messageStatus) {
     await say(messageSymbolNotPresent(message.text));
   }
@@ -141,7 +145,7 @@ async function listOfDisconnectedSymbols(say) {
 }
 
 async function addSymbolsToDisconnect(userText, say) {
-  listOfSymbols.forEach(async (value) => {
+  (await getSymbols()).forEach(async (value) => {
     let { symbol } = getExchangeAndSymbol(value);
     if (userText.split("-")[1].toLowerCase() === symbol.toLowerCase()) {
       addedDisconnectSymbol = true;
@@ -161,7 +165,11 @@ async function deleteSmbolsDisconnectMap(userText, say) {
     await say(`*${userText.split("+")[1].toUpperCase()}* connected manually...`);
     manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
   } else {
-    await say(messageSymbolNotPresent(userText.split("+")[1]));
+    await say(
+      `${userText.split("+")[1].toUpperCase()} sorry this symbol not add to *Disconnect*\n To add use this command *"-${userText
+        .split("+")[1]
+        .toUpperCase()}"* or use the *"help"* command to see the list of commands`
+    );
   }
 }
 
@@ -176,7 +184,7 @@ async function addPrioritySymbols(userText, say) {
   });
 
   if (!addedPrioritySymbols) {
-    messageSymbolNotPresent(userText);
+    await say(messageSymbolNotPresent(userText.split(" ")[1]));
   }
 }
 
@@ -184,9 +192,12 @@ async function deletePrioritySymbols(userText, say) {
   if (prioritySymbols.has(userText.split(" ")[1].toLowerCase())) {
     prioritySymbols.delete(userText.split(" ")[1].toLowerCase());
     await say(`*${userText.split(" ")[1].toUpperCase()}* deleted`);
-    console.log("added", prioritySymbols);
   } else {
-    messageSymbolNotPresent(userText);
+    await say(
+      `${userText.split(" ")[1].toUpperCase()} sorry this symbol not add to *Priority*\n To add use this command *"add ${userText
+        .split(" ")[1]
+        .toUpperCase()}"* or use the *"help"* command to see the list of commands`
+    );
   }
 }
 
