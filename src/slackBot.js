@@ -1,4 +1,5 @@
 import pkg from "@slack/bolt";
+import { WebClient } from "@slack/web-api";
 import { socketDetails, listOfSymbols } from "./socketIO.js";
 import { getExchangeAndSymbol } from "./telegramBot.js";
 import { telegramBotCommandStatus } from "./messages.js";
@@ -40,8 +41,11 @@ async function startSlack() {
     socketMode: true, // Enables real-time event listening
   });
 
+  const web = new WebClient(botToken);
+
   app.message(async ({ message, say }) => {
     if (!message?.text) return;
+    const userInfo = await web.users.info({ user: message.user });
     let userText;
     if (message.text.includes("*")) {
       userText = message.text.substr(1, message.text.length - 2).toLowerCase();
@@ -51,7 +55,7 @@ async function startSlack() {
 
     symbolsStatus(userText, say);
 
-    customMessages(userText, message, say);
+    customMessages(userText, message, say, userInfo);
 
     messageStatus = false;
     addedDisconnectSymbol = false;
@@ -97,7 +101,7 @@ async function customMessages(userText, message, say) {
     disconnectBot();
     await say("Telegram bot disconnected");
   } else if (userText.includes("-")) {
-    addSymbolsToDisconnect(userText, say);
+    addSymbolsToDisconnect(userText, say, userInfo);
   } else if (userText.includes("+")) {
     deleteSmbolsDisconnectMap(userText, say);
   } else if (userText === "disconnected symbols") {
@@ -138,18 +142,18 @@ async function listOfDisconnectedSymbols(say) {
     disconnectSymbol.forEach((value) => {
       message = message === undefined ? `*${value.toUpperCase()}*\n` : message + `*${value.toUpperCase()}*\n`;
     });
-    await say(`List of manually disconnected symbols:\n${message}`);
+    await say(`List of symbols disconnected by slack users:\n${message}`);
   } else {
-    await say("*Zero* symbols disconnected manually");
+    await say("*Zero* symbol disconnected by slack users");
   }
 }
 
-async function addSymbolsToDisconnect(userText, say) {
+async function addSymbolsToDisconnect(userText, say, userInfo) {
   (await getSymbols()).forEach(async (value) => {
     let { symbol } = getExchangeAndSymbol(value);
     if (userText.split("-")[1].toLowerCase() === symbol.toLowerCase()) {
       addedDisconnectSymbol = true;
-      disconnectSymbol.add(userText.split("-")[1].toLowerCase());
+      disconnectSymbol.add(`${userText.split("-")[1].toLowerCase()} - disconnect by ${userInfo?.user?.real_name}`);
       await say(`*${userText.split("-")[1].toUpperCase()}* disconnected manually...`);
       manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
     }
@@ -164,9 +168,12 @@ async function deleteSmbolsDisconnectMap(userText, say) {
     disconnectSymbol.delete(userText.split("+")[1].toLowerCase());
     await say(`*${userText.split("+")[1].toUpperCase()}* connected manually...`);
     manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
+    if (prioritySymbols.has(userText.split("+")[1].toLowerCase())) {
+      prioritySymbols.delete(userText.split("+")[1].toLowerCase());
+    }
   } else {
     await say(
-      `${userText.split("+")[1].toUpperCase()} sorry this symbol not add to *Disconnect*\n To add use this command *"-${userText
+      `${userText.split("+")[1].toUpperCase()}, This symbol not add to *Disconnect*\nTo add use this command *"-${userText
         .split("+")[1]
         .toUpperCase()}"* or use the *"help"* command to see the list of commands`
     );
@@ -194,7 +201,7 @@ async function deletePrioritySymbols(userText, say) {
     await say(`*${userText.split(" ")[1].toUpperCase()}* deleted`);
   } else {
     await say(
-      `${userText.split(" ")[1].toUpperCase()} sorry this symbol not add to *Priority*\n To add use this command *"add ${userText
+      `${userText.split(" ")[1].toUpperCase()}, This symbol not add to *Priority*\nTo add use this command *"add ${userText
         .split(" ")[1]
         .toUpperCase()}"* or use the *"help"* command to see the list of commands`
     );

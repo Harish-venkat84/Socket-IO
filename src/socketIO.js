@@ -103,20 +103,17 @@ async function validateFeederAndCandlestick() {
     let { symbol } = getExchangeAndSymbol(url);
     if (Date.now() - socket.order_book > socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookDown");
-
       socketDetails.set(url, { ...socketDetails.get(url), order_book_status: false });
     } else if (!socket.order_book_status && Date.now() - socket.order_book < socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookUp");
-
       socketDetails.set(url, { ...socketDetails.get(url), order_book_status: true });
     }
 
-    if (Date.now() - socket.candlestick > 60 * 1000 && prioritySymbols.has(symbol.toLowerCase())) {
+    if (Date.now() - socket.candlestick > socketIntervalSeconds * 1000 && prioritySymbols.has(symbol.toLowerCase())) {
       sendAlertMessage(url, "candlestickDownOneMinute");
       socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: false });
-    } else if (!socket.candlestick_status && Date.now() - socket.candlestick < 60 * 1000) {
+    } else if (!socket.candlestick_status && Date.now() - socket.candlestick < socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "candlestickUp");
-
       socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: true });
     }
   });
@@ -182,12 +179,13 @@ async function adminSymbolsValidation() {
 
 async function socketDisconnected() {
   socketDetails.forEach((socket, url) => {
+    let socketUrl = url;
     if (socket.disconnected && !socket.connection) {
       socketDetails.get(url).socket.off();
       socketDetails.get(url).socket.disconnect();
       socketDetails.delete(url);
-      connectSockets(url);
-      // sendAlertMessage(url, "default");
+      // sendAlertMessage(socketUrl, "default");
+      connectSockets(socketUrl);
     }
   });
 }

@@ -17,6 +17,13 @@ function slackMessage(url, alertMessage) {
         getTime() +
         `\n❌ *"${symbol}"* - 📚 order book down for *"${socketIntervalSeconds} seconds"* seconds, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
       break;
+    case "orderBookCustomDownTime":
+      finalMessage =
+        getTime() +
+        `\n❌ *"${symbol}"* - 📚 order book down for *"${
+          socketCandleStickSeconds / 60
+        } minutes"* seconds, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
+      break;
 
     case "orderBookUp":
       finalMessage = getTime() + `\n✅ *"${symbol}"* - 📚 order book issue resolved, back to normal - *${exchange}*\n🔗: ${webUrl}`;
@@ -31,7 +38,9 @@ function slackMessage(url, alertMessage) {
       break;
 
     case "candlestickDownOneMinute":
-      finalMessage = getTime() + `\n❌ *"${symbol}"* - 📈 candlestick down for *"1 minute"*, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
+      finalMessage =
+        getTime() +
+        `\n❌ *"${symbol}"* - 📈 candlestick down for *"${socketIntervalSeconds} seconds"*, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "candlestickUp":
