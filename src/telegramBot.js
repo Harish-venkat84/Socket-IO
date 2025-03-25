@@ -1,28 +1,21 @@
 import axios from "axios";
-import {
-  feeder,
-  getTelegramBotToken,
-  telegramBotChatId,
-  telegramGroupChatId,
-  stagingUrl,
-  uniCoinDcxUrl,
-  zebacusUrl,
-  stagingLogo,
-  unicoinDcxLogo,
-  zebacusLogo,
-} from "./index.js";
+import { getLogoUrl } from "./getSymbols.js";
+import { feeder, getTelegramBotToken, telegramBotChatId, telegramGroupChatId, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
 
 const telegramBotApiUrl = `https://api.telegram.org/bot${getTelegramBotToken()}/sendPhoto`;
-const imageUrl = feeder === "staging" ? stagingLogo : feeder === "unicoindcx" ? unicoinDcxLogo : zebacusLogo;
 const url = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 
 function telegramBot(message, symbol) {
+  const imageUrl = getLogoUrl();
+  const finalImageUrl = imageUrl
+    ? imageUrl
+    : "https://images.pexels.com/photos/163728/dead-end-sign-cul-de-sac-hopeless-163728.jpeg?auto=compress&cs=tinysrgb&w=600";
   const chatId = telegramBotChatId;
   axios
     .post(telegramBotApiUrl, {
       chat_id: chatId,
       caption: message,
-      photo: imageUrl,
+      photo: finalImageUrl,
       reply_markup: {
         inline_keyboard: [
           [

@@ -46,9 +46,13 @@ const stagingSymbolsApi = process.env.STAGING_SYMBOLS_API;
 const unicoinDcxSymbolsApi = process.env.UNICOIN_DCX_SYMBOLS_API;
 const zebacusSymbolsApi = process.env.ZEBACUS_SYMOLS_API;
 
-const stagingLogo = process.env.STAGING_LOGO;
-const unicoinDcxLogo = process.env.UNICOIN_DCX_LOGO;
-const zebacusLogo = process.env.ZEBACUS_LOGO;
+const stagingAdminSettingApi = process.env.STAGING_ADMIN_SETTING;
+const unicoindcxAdminSettingApi = process.env.UNICOIN_DCX_ADMIN_SETTING;
+const zebacusAdminSettingApi = process.env.ZEBACUS_ADMIN_SETTING;
+
+const stagingFileViewApi = process.env.STAGING_FILE_VIEW;
+const unicoindcxFileViewApi = process.env.UNICOIN_DCX_FILE_VIEW;
+const zebacusFileViewApi = process.env.ZEBACUS_FILE_VIEW;
 
 function getTelegramBotToken() {
   if (feeder === "unicoindcx") {
@@ -91,7 +95,10 @@ export {
   stagingSymbolsApi,
   unicoinDcxSymbolsApi,
   zebacusSymbolsApi,
-  stagingLogo,
-  unicoinDcxLogo,
-  zebacusLogo,
+  stagingAdminSettingApi,
+  unicoindcxAdminSettingApi,
+  zebacusAdminSettingApi,
+  stagingFileViewApi,
+  unicoindcxFileViewApi,
+  zebacusFileViewApi,
 };

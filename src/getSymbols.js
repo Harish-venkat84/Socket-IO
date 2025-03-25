@@ -6,6 +6,12 @@ import {
   stagingSocketUrl,
   uniCoinDcxSocketUrl,
   zebacusSocketUrl,
+  stagingAdminSettingApi,
+  unicoindcxAdminSettingApi,
+  zebacusAdminSettingApi,
+  stagingFileViewApi,
+  unicoindcxFileViewApi,
+  zebacusFileViewApi,
 } from "./index.js";
 import axios from "axios";
 import { disconnectSymbol } from "./slackBot.js";
@@ -41,4 +47,28 @@ async function getSymbols() {
   return symbolsArray;
 }
 
+async function getLogoUrl() {
+  let adminUrl;
+  let fileViewUrl;
+  let logoUrl;
+
+  if (feeder === "staging") {
+    adminUrl = stagingAdminSettingApi;
+    fileViewUrl = stagingFileViewApi;
+  } else if (feeder === "unicoindcx") {
+    adminUrl = unicoindcxAdminSettingApi;
+    fileViewUrl = unicoindcxFileViewApi;
+  } else if (feeder === "zebacus") {
+    adminUrl = zebacusAdminSettingApi;
+    fileViewUrl = zebacusFileViewApi;
+  }
+  await axios
+    .get(adminUrl)
+    .then((data) => (logoUrl = `${fileViewUrl}${data?.data?.logo.logo}`))
+    .catch((err) => console.log(err));
+
+  return logoUrl;
+}
+
 export default getSymbols;
+export { getLogoUrl };
