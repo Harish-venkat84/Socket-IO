@@ -5,11 +5,12 @@ import { feeder, getTelegramBotToken, telegramBotChatId, telegramGroupChatId, st
 const telegramBotApiUrl = `https://api.telegram.org/bot${getTelegramBotToken()}/sendPhoto`;
 const url = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 
-function telegramBot(message, symbol) {
-  const imageUrl = getLogoUrl();
-  const finalImageUrl = imageUrl
-    ? imageUrl
-    : "https://images.pexels.com/photos/163728/dead-end-sign-cul-de-sac-hopeless-163728.jpeg?auto=compress&cs=tinysrgb&w=600";
+async function telegramBot(message, symbol) {
+  const imageUrl = await getLogoUrl();
+  const finalImageUrl =
+    imageUrl !== "failed"
+      ? imageUrl
+      : "https://images.pexels.com/photos/163728/dead-end-sign-cul-de-sac-hopeless-163728.jpeg?auto=compress&cs=tinysrgb&w=600";
   const chatId = telegramBotChatId;
   axios
     .post(telegramBotApiUrl, {

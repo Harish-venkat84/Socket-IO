@@ -3,6 +3,7 @@ import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 import { messageApp, feeder } from "./index.js";
 import { disconnectSymbol, prioritySymbols } from "./slackBot.js";
 import { socketIntervalSeconds, socketCandleStickSeconds, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
+import { binanceTradePage } from "./getSymbols.js";
 
 function slackMessage(url, alertMessage) {
   const { exchange, symbol, exchangeUrl } = getExchangeAndSymbol(url);
@@ -16,13 +17,6 @@ function slackMessage(url, alertMessage) {
       finalMessage =
         getTime() +
         `\n❌ *"${symbol}"* - 📚 order book down for *"${socketIntervalSeconds} seconds"* seconds, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
-      break;
-    case "orderBookCustomDownTime":
-      finalMessage =
-        getTime() +
-        `\n❌ *"${symbol}"* - 📚 order book down for *"${
-          socketCandleStickSeconds / 60
-        } minutes"* seconds, need to resolve ASAP - *${exchange}*\n🔗: ${webUrl}`;
       break;
 
     case "orderBookUp":
@@ -56,6 +50,11 @@ function slackMessage(url, alertMessage) {
     case "newSymbol":
       finalMessage =
         getTime() + `\n🚀 *"${symbol}"* - New symbol has been added to the exchange. WebSocket connections updated - *${exchange}*\n🔗: ${webUrl}`;
+      break;
+
+    case "binanceSymbolBreak":
+      finalMessage =
+        getTime() + `\n🟡 *${symbol}* - Binance changed the symbol status from Trading to *"BREAK"* - *${exchange}*\n🔗: ${binanceTradePage}`;
       break;
 
     default:
@@ -101,6 +100,11 @@ function telegramBotMessage(url, alertMessage) {
 
     case "newSymbol":
       finalMessage = getTime() + `\n🚀 "${symbol}" - New symbol has been added to the exchange. WebSocket connections updated - ${exchange}`;
+      break;
+
+    case "binanceSymbolBreak":
+      finalMessage =
+        getTime() + `\n🟡 "${symbol}" - Binance changed the symbol status from Trading to "BREAK" - ${exchange}\n🔗: ${binanceTradePage}`;
       break;
 
     default:

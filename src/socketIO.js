@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import getSymbols from "./getSymbols.js";
+import getSymbols, { getBinanceSymbolStatus } from "./getSymbols.js";
 import { setIntervalSeconds, socketIntervalSeconds, activeSocketsIntervalSeconds, socketCandleStickSeconds } from "./index.js";
 import { getTime, sendAlertMessage, telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot } from "./telegramBotCommands.js";
@@ -99,11 +99,12 @@ async function start() {
 }
 
 async function validateFeederAndCandlestick() {
-  socketDetails.forEach((socket, url) => {
+  socketDetails.forEach(async (socket, url) => {
     let { symbol } = getExchangeAndSymbol(url);
     if (Date.now() - socket.order_book > socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookDown");
       socketDetails.set(url, { ...socketDetails.get(url), order_book_status: false });
+      await getBinanceSymbolStatus(url, symbol);
     } else if (!socket.order_book_status && Date.now() - socket.order_book < socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookUp");
       socketDetails.set(url, { ...socketDetails.get(url), order_book_status: true });
