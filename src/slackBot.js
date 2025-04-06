@@ -16,6 +16,8 @@ import {
   stagingUrl,
   uniCoinDcxUrl,
   zebacusUrl,
+  slackLocalAppToken,
+  slackLocalBotToken,
 } from "./index.js";
 
 const { App } = pkg;
@@ -89,7 +91,7 @@ async function symbolsStatus(userText, say) {
   }
 }
 
-async function customMessages(userText, message, say) {
+async function customMessages(userText, message, say, userInfo) {
   if (userText === "status") {
     await say(telegramBotCommandStatus(socketDetails, listOfSymbols));
   } else if (message.user === undefined || userText.includes("joined")) {
@@ -140,7 +142,7 @@ async function listOfDisconnectedSymbols(say) {
 
   if (disconnectSymbol.size > 0) {
     disconnectSymbol.forEach((value) => {
-      message = message === undefined ? `*${value.toUpperCase()}*\n` : message + `*${value.toUpperCase()}*\n`;
+      message = message === undefined ? `*${value}*\n` : message + `*${value}*\n`;
     });
     await say(`List of symbols disconnected by slack users:\n${message}`);
   } else {
@@ -153,7 +155,7 @@ async function addSymbolsToDisconnect(userText, say, userInfo) {
     let { symbol } = getExchangeAndSymbol(value);
     if (userText.split("-")[1].toLowerCase() === symbol.toLowerCase()) {
       addedDisconnectSymbol = true;
-      disconnectSymbol.add(`${userText.split("-")[1].toLowerCase()} - disconnect by ${userInfo?.user?.real_name}`);
+      disconnectSymbol.add(`${userText.split("-")[1].toUpperCase()} - disconnect by ${userInfo?.user?.real_name.toUpperCase()}`);
       await say(`*${userText.split("-")[1].toUpperCase()}* disconnected manually...`);
       manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
     }

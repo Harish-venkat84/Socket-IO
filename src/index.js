@@ -18,6 +18,9 @@ const slackUnicoinDcxAppToken = process.env.SLACK_UNICOINDCX_APP_TOKEN;
 const slackZebacusBotToken = process.env.SLACK_ZEBACUS_BOT_TOKEN;
 const slackZebacusAppToken = process.env.SLACK_ZEBACUS_APP_TOKEN;
 
+const slackLocalBotToken = process.env.SLACK_LOCAL_BOT_TOKEN;
+const slackLocalAppToken = process.env.SLACK_LOCAL_APP_TOKEN;
+
 const telegramBotTokenUincoindcx = process.env.TELEGRAM_BOT_TOKEN_UNICOINDCX;
 const telegramBotTokenZebacus = process.env.TELEGRAM_BOT_TOKEN_ZEBACUS;
 const telegramBotTokenStaging = process.env.TELEGRAM_BOT_TOKEN_STAGING;
@@ -101,4 +104,6 @@ export {
   stagingFileViewApi,
   unicoindcxFileViewApi,
   zebacusFileViewApi,
+  slackLocalBotToken,
+  slackLocalAppToken,
 };
