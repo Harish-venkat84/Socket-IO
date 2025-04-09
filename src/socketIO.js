@@ -1,13 +1,21 @@
 import { io } from "socket.io-client";
 import getSymbols, { getBinanceSymbolStatus } from "./getSymbols.js";
-import { setIntervalSeconds, socketIntervalSeconds, activeSocketsIntervalSeconds, socketCandleStickSeconds } from "./index.js";
+import {
+  setIntervalSeconds,
+  socketIntervalSeconds,
+  activeSocketsIntervalSeconds,
+  socketCandleStickSeconds,
+  pm2RestartIntervalSeconds,
+} from "./index.js";
 import { getTime, sendAlertMessage, telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot } from "./telegramBotCommands.js";
-import { startSlack, manuallyDisconnected, prioritySymbols, disconnectSymbol } from "./slackBot.js";
+import { startSlack, manuallyDisconnected, prioritySymbols, disconnectSymbol, disconnectedUser, pm2Symbol } from "./slackBot.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
+import { alertManager } from "./slack.js";
 
 let listOfSymbols;
 const socketDetails = new Map();
+let alertManagerCount = 0;
 
 function connectSockets(url) {
   const socket = io(url, { path: "/feeder" }, { autoConnect: false });
@@ -153,6 +161,11 @@ async function adminSymbolsValidation() {
         if (disconnectSymbol.has(symbol.toLowerCase())) {
           disconnectSymbol.delete(symbol.toLowerCase());
           manuallyDisconnected.delete(symbol.toLowerCase());
+          disconnectedUser.forEach((value, key) => {
+            if (key === symbol.toUpperCase()) {
+              disconnectedUser.delete(key);
+            }
+          });
         }
 
         if (prioritySymbols.has(symbol.toLowerCase())) {
@@ -190,6 +203,19 @@ async function socketDisconnected() {
     }
   });
 }
+
+setInterval(() => {
+  socketDetails.forEach((socket, url) => {
+    let { symbol } = getExchangeAndSymbol(url);
+    if (Date.now() - socket.order_book > (pm2RestartIntervalSeconds - 60) * 1000) {
+      if (alertManagerCount === 0 && pm2Symbol.has(symbol.toLowerCase())) {
+        alertManager();
+        alertManagerCount++;
+      }
+    }
+  });
+  alertManagerCount = 0;
+}, pm2RestartIntervalSeconds * 1000);
 
 monitorSockets();
 

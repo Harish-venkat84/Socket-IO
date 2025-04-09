@@ -23,11 +23,14 @@ import {
 const { App } = pkg;
 let messageStatus = false;
 const disconnectSymbol = new Set();
+let disconnectedUser = new Map();
 const manuallyDisconnected = new Map();
 const prioritySymbols = new Set();
 const websiteUrl = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 let addedDisconnectSymbol = false;
 let addedPrioritySymbols = false;
+const pm2Symbol = new Set();
+let addedPm2Symbols = false;
 
 async function startSlack() {
   const { appToken, botToken } =
@@ -62,6 +65,7 @@ async function startSlack() {
     messageStatus = false;
     addedDisconnectSymbol = false;
     addedPrioritySymbols = false;
+    addedPm2Symbols = false;
   });
 
   // Start the bot
@@ -120,6 +124,12 @@ async function customMessages(userText, message, say, userInfo) {
     await say(
       `*${userText.toUpperCase()}*, This symbol socket disconnected by slack user\nTo reconnect use this command "+${userText.toUpperCase()}" or use the *"help"* command to see the list of commands`
     );
+  } else if (userText.split(" ")[0].toLowerCase() === "pm2-add") {
+    addSymbols_pm2(userText, say);
+  } else if (userText.split(" ")[0].toLowerCase() === "pm2-delete") {
+    deleteSymbols_pm2(userText, say);
+  } else if (userText === "pm2 symbols") {
+    listOf_pm2_symbols(say);
   } else if (!messageStatus) {
     await say(messageSymbolNotPresent(message.text));
   }
@@ -134,15 +144,18 @@ async function helpCommand(say) {
     *disconnected symbols* - list of symbols manually disconnected by slack user\n
     *add symbol name* eg(add ETHUSDT) - To add to priority symbols for candlestick 60 seconds\n
     *delete symbol name* eg(delete ETHUSDT) - To delete the symbols from priority\n
-    *priority symbols* - list of symbols added to priority for candlestick 60 seconds`);
+    *priority symbols* - list of symbols added to priority for candlestick 60 seconds\n
+    *pm2-add symbol name* eg(pm2-add ETHUSDT) - To add to pm2 symbols\n
+    *pm2-delete symbol name* eg(pm2-delete ETHUSDT) - To delete the symbols from pm2 list\n
+    *pm2 symbols* - list of symbols added to pm2`);
 }
 
 async function listOfDisconnectedSymbols(say) {
   let message;
 
-  if (disconnectSymbol.size > 0) {
-    disconnectSymbol.forEach((value) => {
-      message = message === undefined ? `*${value}*\n` : message + `*${value}*\n`;
+  if (disconnectedUser.size > 0) {
+    disconnectedUser.forEach((value, key) => {
+      message = message === undefined ? `*${key}* disconnected by ${value}\n` : message + `*${key}* disconnected by ${value}\n`;
     });
     await say(`List of symbols disconnected by slack users:\n${message}`);
   } else {
@@ -155,7 +168,8 @@ async function addSymbolsToDisconnect(userText, say, userInfo) {
     let { symbol } = getExchangeAndSymbol(value);
     if (userText.split("-")[1].toLowerCase() === symbol.toLowerCase()) {
       addedDisconnectSymbol = true;
-      disconnectSymbol.add(`${userText.split("-")[1].toUpperCase()} - disconnect by ${userInfo?.user?.real_name.toUpperCase()}`);
+      disconnectSymbol.add(userText.split("-")[1].toLowerCase());
+      disconnectedUser.set(userText.split("-")[1].toUpperCase(), userInfo?.user?.real_name.toUpperCase());
       await say(`*${userText.split("-")[1].toUpperCase()}* disconnected manually...`);
       manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
     }
@@ -169,7 +183,13 @@ async function deleteSmbolsDisconnectMap(userText, say) {
   if (disconnectSymbol.has(userText.split("+")[1].toLowerCase())) {
     disconnectSymbol.delete(userText.split("+")[1].toLowerCase());
     await say(`*${userText.split("+")[1].toUpperCase()}* connected manually...`);
-    manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: true });
+    manuallyDisconnected.set(userText.split("+")[1].toLowerCase(), { disconnected: true });
+
+    disconnectedUser.forEach((value, key) => {
+      if (key === userText.split("+")[1].toUpperCase()) {
+        disconnectedUser.delete(key);
+      }
+    });
     if (prioritySymbols.has(userText.split("+")[1].toLowerCase())) {
       prioritySymbols.delete(userText.split("+")[1].toLowerCase());
     }
@@ -226,4 +246,44 @@ function messageSymbolNotPresent(userText) {
   return `🙇 *"${userText}"*: Sorry, this symbol is currently not *active/present* on the exchange or please check the *symbol name!*`;
 }
 
-export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols };
+async function addSymbols_pm2(userText, say) {
+  (await getSymbols()).forEach(async (value) => {
+    let { symbol } = getExchangeAndSymbol(value);
+    if (symbol.toLowerCase() === userText.split(" ")[1]) {
+      addedPm2Symbols = true;
+      pm2Symbol.add(userText.split(" ")[1].toLowerCase());
+      await say(`*${userText.split(" ")[1].toUpperCase()}* Added to pm2 list`);
+    }
+  });
+
+  if (!addedPm2Symbols) {
+    await say(messageSymbolNotPresent(userText.split(" ")[1]));
+  }
+}
+
+async function deleteSymbols_pm2(userText, say) {
+  if (pm2Symbol.has(userText.split(" ")[1].toLowerCase())) {
+    pm2Symbol.delete(userText.split(" ")[1].toLowerCase());
+    await say(`*${userText.split(" ")[1].toUpperCase()}* deleted`);
+  } else {
+    await say(
+      `${userText.split(" ")[1].toUpperCase()}, This symbol not add to *pm2 list*\nTo add use this command *"add-pm2 ${userText
+        .split(" ")[1]
+        .toUpperCase()}"* or use the *"help"* command to see the list of commands`
+    );
+  }
+}
+
+async function listOf_pm2_symbols(say) {
+  let message;
+  if (pm2Symbol.size > 0) {
+    pm2Symbol.forEach((value) => {
+      message = message === undefined ? `*${value.toUpperCase()}*\n` : message + `*${value.toUpperCase()}*\n`;
+    });
+    await say(`List of pm2 symbols:\n${message}`);
+  } else {
+    await say("*Zero* symbols added to pm2");
+  }
+}
+
+export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols, disconnectedUser, pm2Symbol };

@@ -7,6 +7,7 @@ import {
   slackUnicoinDcxChannelName,
   slackZebacusChannelUrl,
   slackZebacusChannelName,
+  prometheusAlertmanager,
 } from "./index.js";
 
 const slackData = {
@@ -28,4 +29,38 @@ function slackChannel(message) {
     });
 }
 
-export { slackChannel };
+function alertManager() {
+  const alert = [
+    {
+      labels: {
+        alertname: "restarting_pm2_feeder",
+        severity: "critical",
+        environment: "production",
+      },
+      annotations: {
+        summary: "stating feeder down alert",
+        description: "stating feeder down alert",
+        runbook: "stating feeder down alert",
+      },
+      startsAt: new Date().toISOString(),
+      endsAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  axios
+    .post(prometheusAlertmanager, alert, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    .then((res) => console.log("✅ Alert sent:", res.status))
+    .catch((err) => {
+      console.error("❌ Error sending alert:", err.message);
+      if (err.response) {
+        console.error("Status Code:", err.response.status);
+        console.error("Response Body:", err.response.data);
+      }
+    });
+}
+
+export { slackChannel, alertManager };
