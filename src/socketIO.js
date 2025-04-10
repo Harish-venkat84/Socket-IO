@@ -215,7 +215,7 @@ setInterval(() => {
     if (Date.now() - socket.order_book > pm2RestartIntervalSeconds * 1000) {
       if (alertManagerCount === 0 && pm2Symbol.has(symbol.toLowerCase()) && !pm2SymbolStatus.get(symbol.toLowerCase()).status) {
         pm2SymbolStatus.set(symbol.toLowerCase(), { status: true });
-        // alertManager();
+        alertManager();
         console.log(
           getTime(),
           `pm2 restart initiated due to this symbol 'order book' has been down for ${pm2RestartIntervalSeconds / 60} minutes: "${symbol}"`
