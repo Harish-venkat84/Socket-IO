@@ -31,6 +31,7 @@ let addedDisconnectSymbol = false;
 let addedPrioritySymbols = false;
 const pm2Symbol = new Set();
 let addedPm2Symbols = false;
+const pm2SymbolStatus = new Map();
 
 async function startSlack() {
   const { appToken, botToken } =
@@ -124,9 +125,9 @@ async function customMessages(userText, message, say, userInfo) {
     await say(
       `*${userText.toUpperCase()}*, This symbol socket disconnected by slack user\nTo reconnect use this command "+${userText.toUpperCase()}" or use the *"help"* command to see the list of commands`
     );
-  } else if (userText.split(" ")[0].toLowerCase() === "pm2-add") {
+  } else if (userText.split(" ")[0].toLowerCase() === "pm2_add") {
     addSymbols_pm2(userText, say);
-  } else if (userText.split(" ")[0].toLowerCase() === "pm2-delete") {
+  } else if (userText.split(" ")[0].toLowerCase() === "pm2_delete") {
     deleteSymbols_pm2(userText, say);
   } else if (userText === "pm2 symbols") {
     listOf_pm2_symbols(say);
@@ -145,8 +146,8 @@ async function helpCommand(say) {
     *add symbol name* eg(add ETHUSDT) - To add to priority symbols for candlestick 60 seconds\n
     *delete symbol name* eg(delete ETHUSDT) - To delete the symbols from priority\n
     *priority symbols* - list of symbols added to priority for candlestick 60 seconds\n
-    *pm2-add symbol name* eg(pm2-add ETHUSDT) - To add to pm2 symbols\n
-    *pm2-delete symbol name* eg(pm2-delete ETHUSDT) - To delete the symbols from pm2 list\n
+    *pm2_add symbol name* eg(pm2_add ETHUSDT) - To add to pm2 symbols\n
+    *pm2_delete symbol name* eg(pm2_delete ETHUSDT) - To delete the symbols from pm2 list\n
     *pm2 symbols* - list of symbols added to pm2`);
 }
 
@@ -252,6 +253,7 @@ async function addSymbols_pm2(userText, say) {
     if (symbol.toLowerCase() === userText.split(" ")[1]) {
       addedPm2Symbols = true;
       pm2Symbol.add(userText.split(" ")[1].toLowerCase());
+      pm2SymbolStatus.set(userText.split(" ")[1].toLowerCase(), { status: false });
       await say(`*${userText.split(" ")[1].toUpperCase()}* Added to pm2 list`);
     }
   });
@@ -264,6 +266,7 @@ async function addSymbols_pm2(userText, say) {
 async function deleteSymbols_pm2(userText, say) {
   if (pm2Symbol.has(userText.split(" ")[1].toLowerCase())) {
     pm2Symbol.delete(userText.split(" ")[1].toLowerCase());
+    pm2SymbolStatus.delete(userText.split(" ")[1].toLowerCase());
     await say(`*${userText.split(" ")[1].toUpperCase()}* deleted`);
   } else {
     await say(
@@ -286,4 +289,4 @@ async function listOf_pm2_symbols(say) {
   }
 }
 
-export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols, disconnectedUser, pm2Symbol };
+export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols, disconnectedUser, pm2Symbol, pm2SymbolStatus };
