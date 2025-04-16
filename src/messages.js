@@ -54,7 +54,7 @@ function slackMessage(url, alertMessage) {
 
     case "binanceSymbolBreak":
       finalMessage =
-        getTime() + `\n🟡 *${symbol}* - Binance changed the symbol status from Trading to *"BREAK"* - *${exchange}*\n🔗: ${binanceTradePage}`;
+        getTime() + `\n🟡 *${symbol}* - *Binance* change the symbol status from Trading to *"BREAK"* - *${exchange}*\n🔗: ${binanceTradePage}`;
       break;
 
     default:
