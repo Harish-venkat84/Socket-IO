@@ -147,11 +147,11 @@ async function adminSymbolsValidation() {
   let symbolsData = new Set(await getSymbols());
   listOfSymbols.forEach((url) => {
     if (!symbolsData.has(url)) {
+      let { symbol } = getExchangeAndSymbol(url);
       listOfSymbols.delete(url);
       socketDetails.get(url).socket.off();
       socketDetails.get(url).socket.disconnect();
       socketDetails.delete(url);
-      let { symbol } = getExchangeAndSymbol(url);
       if (manuallyDisconnected.get(symbol.toLowerCase())?.disconnected) {
         console.log(getTime(), "user manually disconnected the socket for this symbol", url);
         manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: false });

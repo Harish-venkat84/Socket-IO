@@ -59,6 +59,11 @@ const stagingFileViewApi = process.env.STAGING_FILE_VIEW;
 const unicoindcxFileViewApi = process.env.UNICOIN_DCX_FILE_VIEW;
 const zebacusFileViewApi = process.env.ZEBACUS_FILE_VIEW;
 
+const admin_gateway = process.env.ADMIN_GATEWAY;
+const trader_gateway = process.env.TRADER_GETWAY;
+const crm_gateway = process.env.CRM_GETWAY;
+const exchange_gateway = process.env.EXCHANGE_GETWAY;
+
 function getTelegramBotToken() {
   if (feeder === "unicoindcx") {
     return telegramBotTokenUincoindcx;
@@ -110,4 +115,9 @@ export {
   zebacusFileViewApi,
   slackLocalBotToken,
   slackLocalAppToken,
+  slackLocalChannelUrl,
+  admin_gateway,
+  crm_gateway,
+  trader_gateway,
+  exchange_gateway,
 };

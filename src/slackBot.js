@@ -1,3 +1,4 @@
+import axios from "axios";
 import pkg from "@slack/bolt";
 import { WebClient } from "@slack/web-api";
 import { socketDetails, listOfSymbols } from "./socketIO.js";
@@ -5,6 +6,7 @@ import { getExchangeAndSymbol } from "./telegramBot.js";
 import { telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot, disconnectBot } from "./telegramBotCommands.js";
 import getSymbols from "./getSymbols.js";
+import crypto from "crypto";
 import {
   feeder,
   slackStagingBotToken,
@@ -32,6 +34,7 @@ let addedPrioritySymbols = false;
 const pm2Symbol = new Set();
 let addedPm2Symbols = false;
 const pm2SymbolStatus = new Map();
+let catch_count = 0;
 
 async function startSlack() {
   const { appToken, botToken } =
@@ -97,43 +100,131 @@ async function symbolsStatus(userText, say) {
 }
 
 async function customMessages(userText, message, say, userInfo) {
-  if (userText === "status") {
-    await say(telegramBotCommandStatus(socketDetails, listOfSymbols));
-  } else if (message.user === undefined || userText.includes("joined")) {
-    return;
-  } else if (userText === "start telegram bot") {
-    startTelegarmBot();
-    await say("Telegram bot running....");
-  } else if (userText === "disconnect telegram bot") {
-    disconnectBot();
-    await say("Telegram bot disconnected");
-  } else if (userText.includes("-")) {
-    addSymbolsToDisconnect(userText, say, userInfo);
-  } else if (userText.includes("+")) {
-    deleteSmbolsDisconnectMap(userText, say);
-  } else if (userText === "disconnected symbols") {
-    listOfDisconnectedSymbols(say);
-  } else if (userText === "help") {
-    helpCommand(say);
-  } else if (userText.split(" ")[0].toLowerCase() === "add") {
-    addPrioritySymbols(userText, say);
-  } else if (userText.split(" ")[0].toLowerCase() === "delete") {
-    deletePrioritySymbols(userText, say);
-  } else if (userText === "priority symbols") {
-    listOfPrioritySymbols(say);
-  } else if (disconnectSymbol.has(userText)) {
-    await say(
-      `*${userText.toUpperCase()}*, This symbol socket disconnected by slack user\nTo reconnect use this command "+${userText.toUpperCase()}" or use the *"help"* command to see the list of commands`
-    );
-  } else if (userText.split(" ")[0].toLowerCase() === "pm2_add") {
-    addSymbols_pm2(userText, say);
-  } else if (userText.split(" ")[0].toLowerCase() === "pm2_delete") {
-    deleteSymbols_pm2(userText, say);
-  } else if (userText === "pm2 symbols") {
-    listOf_pm2_symbols(say);
-  } else if (!messageStatus) {
-    await say(messageSymbolNotPresent(message.text));
+  switch (userText) {
+    case "status": {
+      await say(telegramBotCommandStatus(socketDetails, listOfSymbols));
+      break;
+    }
+    case "start telegram bot": {
+      startTelegarmBot();
+      await say("Telegram bot running....");
+      break;
+    }
+    case "disconnect telegram bot": {
+      disconnectBot();
+      await say("Telegram bot disconnected");
+      break;
+    }
+    case "disconnected symbols": {
+      listOfDisconnectedSymbols(say);
+      break;
+    }
+    case "help": {
+      helpCommand(say);
+      break;
+    }
+    case "priority symbols": {
+      listOfPrioritySymbols(say);
+      break;
+    }
+
+    case "pm2 symbols": {
+      listOf_pm2_symbols(say);
+      break;
+    }
+
+    default: {
+      if (userText.includes(" ")) {
+        const userTextFirstIndex = userText.split(" ")[0].toLowerCase();
+        switch (userTextFirstIndex) {
+          case "add": {
+            addPrioritySymbols(userText, say);
+            break;
+          }
+          case "delete": {
+            deletePrioritySymbols(userText, say);
+            break;
+          }
+          case "pm2_add": {
+            addSymbols_pm2(userText, say);
+            break;
+          }
+          case "pm2_delete": {
+            deleteSymbols_pm2(userText, say);
+            break;
+          }
+          case "binance": {
+            await validateBinanceSymbols(userText, say);
+            break;
+          }
+          case "mexc": {
+            await validateMexcSymbols(userText, say);
+            break;
+          }
+          case "okx": {
+            await validate_okx_symbols(userText, say);
+            break;
+          }
+          case "kraken": {
+            await validate_karken_symbols(userText, say);
+            break;
+          }
+          case "kucoin": {
+            await validate_kucoin_symbol(userText, say);
+            break;
+          }
+        }
+      } else {
+        if (userText.includes("-")) {
+          addSymbolsToDisconnect(userText, say, userInfo);
+        } else if (userText.includes("+")) {
+          deleteSmbolsDisconnectMap(userText, say);
+        } else if (message.user === undefined || userText.includes("joined")) {
+          return;
+        } else if (!messageStatus) {
+          await say(messageSymbolNotPresent(message.text));
+        }
+      }
+    }
   }
+
+  // if (userText === "status") {
+  //   await say(telegramBotCommandStatus(socketDetails, listOfSymbols));
+  // } else if (message.user === undefined || userText.includes("joined")) {
+  //   return;
+  // } else if (userText === "start telegram bot") {
+  //   startTelegarmBot();
+  //   await say("Telegram bot running....");
+  // } else if (userText === "disconnect telegram bot") {
+  //   disconnectBot();
+  //   await say("Telegram bot disconnected");
+  // } else if (userText.includes("-")) {
+  //   addSymbolsToDisconnect(userText, say, userInfo);
+  // } else if (userText.includes("+")) {
+  //   deleteSmbolsDisconnectMap(userText, say);
+  // } else if (userText === "disconnected symbols") {
+  //   listOfDisconnectedSymbols(say);
+  // } else if (userText === "help") {
+  //   helpCommand(say);
+  // } else if (userText.split(" ")[0].toLowerCase() === "add") {
+  //   addPrioritySymbols(userText, say);
+  // } else if (userText.split(" ")[0].toLowerCase() === "delete") {
+  //   deletePrioritySymbols(userText, say);
+  // } else if (userText === "priority symbols") {
+  //   listOfPrioritySymbols(say);
+  // } else if (disconnectSymbol.has(userText)) {
+  //   await say(
+  //     `*${userText.toUpperCase()}*, This symbol socket disconnected by slack user\nTo reconnect use this command "+${userText.toUpperCase()}" or use the *"help"* command to see the list of commands`
+  //   );
+  // } else if (userText.split(" ")[0].toLowerCase() === "pm2_add") {
+  //   addSymbols_pm2(userText, say);
+  // } else if (userText.split(" ")[0].toLowerCase() === "pm2_delete") {
+  //   deleteSymbols_pm2(userText, say);
+  // } else if (userText === "pm2 symbols") {
+  //   listOf_pm2_symbols(say);
+  // } else if (!messageStatus) {
+  //   await say(messageSymbolNotPresent(message.text));
+  // }
 }
 
 async function helpCommand(say) {
@@ -287,6 +378,113 @@ async function listOf_pm2_symbols(say) {
   } else {
     await say("*Zero* symbols added to pm2");
   }
+}
+
+async function validateBinanceSymbols(userText, say) {
+  try {
+    let binance_ulr = `https://api.binance.com/api/v3/exchangeInfo?symbol=${userText.split(" ")[1].toUpperCase()}`;
+    const response = await axios(binance_ulr);
+    if (response.data?.symbols[0]?.symbol === userText.split(" ")[1].toUpperCase()) {
+      await say(`Binance symbol status: *${userText.split(" ")[1].toUpperCase()} - ${response.data?.symbols[0]?.status}*`);
+    } else {
+      await say(`*${userText.split(" ")[1].toUpperCase()}* - symbol not found in binance...`);
+    }
+  } catch (err) {
+    if (err?.response?.data?.msg === "Invalid symbol.") {
+      await say(`*${userText.split(" ")[1].toUpperCase()}* - symbol not found in binance exchange...`);
+    } else {
+      console.error(`Error fetching Binance status for symbol ${userText.split(" ")[1].toUpperCase()}`, err?.response?.data);
+      await say(`Error fetching from Binance. please check the symbol name`);
+    }
+  }
+}
+
+async function validateMexcSymbols(userText, say) {
+  try {
+    const { data } = await axios.get(`https://api.mexc.com/api/v3/exchangeInfo?symbol=${userText.split(" ")[1].toUpperCase()}`);
+    if (data?.symbols[0]?.symbol === userText.split(" ")[1].toUpperCase()) {
+      await say(`*${userText.split(" ")[1].toUpperCase()}* spot trading status: ${data?.symbols[0]?.isSpotTradingAllowed}`);
+    } else {
+      await say(`${userText.split(" ")[1].toUpperCase()} symbol not present in mexc exchange`);
+    }
+  } catch (err) {
+    console.error("Fething error from mexc exchange", err);
+  }
+}
+
+async function validate_okx_symbols(userText, say) {
+  console.log(userText.split(" ")[1].toUpperCase());
+  const apiKey = "c1faafff-4f74-4acd-b070-f1b08ee0deee";
+  const secretKey = "7137CE2DFF453C92127C75E2C285C7C1";
+  const passphrase = "Qwerty@123";
+
+  const method = "GET";
+  const requestPath = `/api/v5/public/instruments?instType=SPOT&instId=${userText.split(" ")[1].toUpperCase()}`;
+  const body = ""; // Empty for GET
+  const timestamp = new Date().toISOString();
+
+  const prehash = `${timestamp}${method}${requestPath}${body}`;
+  const signature = crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
+
+  try {
+    const { data } = await axios.get(
+      `https://www.okx.com${requestPath}`,
+      {
+        headers: {
+          "OK-ACCESS-KEY": apiKey,
+          "OK-ACCESS-SIGN": signature,
+          "OK-ACCESS-TIMESTAMP": timestamp,
+          "OK-ACCESS-PASSPHRASE": passphrase,
+          "Content-Type": "application/json",
+        },
+      },
+      { timeout: 5000 }
+    );
+
+    if (data?.data[0]?.instId === userText.split(" ")[1].toUpperCase()) {
+      await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - OKX symbol status: ${data?.data[0]?.state}`);
+    } else {
+      await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - symbol not present in OKX (or) please check the symbol name eg:(BTC-USDT)`);
+    }
+    catch_count = 0;
+  } catch (err) {
+    catch_count++;
+    if (catch_count < 5) {
+      await validate_okx_symbols(userText, say);
+    }
+    console.error("❌ OKX exchange API error:", err?.response?.data || err?.message);
+  }
+}
+
+async function validate_karken_symbols(userText, say) {
+  try {
+    const { data } = await axios(`https://api.kraken.com/0/public/AssetPairs?pair=${userText.split(" ")[1].toUpperCase()}&info=info`, {
+      timeout: 5000,
+    });
+
+    if (data?.result[`${userText.split(" ")[1].toUpperCase()}`]) {
+      await say(`${userText.split(" ")[1].toUpperCase()} - Kraken symbol status: ${data?.result[`${userText.split(" ")[1].toUpperCase()}`]?.status}`);
+    } else {
+      await say(`${userText.split(" ")[1].toUpperCase()} - symbol not present in Kraken exchange (or) please check the symbol name`);
+    }
+    catch_count = 0;
+  } catch (err) {
+    catch_count++;
+    if (catch_count < 5) {
+      await validate_karken_symbols(userText, say);
+    }
+  }
+}
+
+async function validate_kucoin_symbol(userText, say) {
+  try {
+    const { data } = await axios(`https://api.kucoin.com/api/v2/symbols/${userText.split(" ")[1].toUpperCase()}`);
+    if (data?.data?.symbol === userText.split(" ")[1].toUpperCase()) {
+      await say(`${userText.split(" ")[1].toUpperCase()} - Kucoin symbol status: ${data?.data?.enableTrading}`);
+    } else {
+      await say(`${userText.split(" ")[1].toUpperCase()} - symbol not present in kucoin exchange (or) please check the name eg:(BTC-USDT)`);
+    }
+  } catch (error) {}
 }
 
 export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols, disconnectedUser, pm2Symbol, pm2SymbolStatus };
