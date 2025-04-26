@@ -7,7 +7,19 @@ import { telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot, disconnectBot } from "./telegramBotCommands.js";
 import getSymbols from "./getSymbols.js";
 import crypto from "crypto";
-import { traderUrl, slackAppToken, slackBotToken } from "./index.js";
+import {
+  traderUrl,
+  slackAppToken,
+  slackBotToken,
+  binanceSymbolsUrl,
+  mexcSymbolsUrl,
+  okxApiKey,
+  okxPassphrase,
+  okxSecretKey,
+  okxSymbolsUrl,
+  krakenSymbolsUrl,
+  kucoinSymbolsUrl,
+} from "./index.js";
 
 const { App } = pkg;
 let messageStatus = false;
@@ -33,7 +45,12 @@ async function startSlack() {
 
   app.message(async ({ message, say }) => {
     if (!message?.text) return;
-    const userInfo = await web.users.info({ user: message.user });
+    let userInfo;
+    try {
+      userInfo = await web.users.info({ user: message.user });
+    } catch (error) {
+      console.log("error getting slack user name");
+    }
     let userText;
     if (message.text.includes("*")) {
       userText = message.text.substr(1, message.text.length - 2).toLowerCase();
@@ -145,7 +162,7 @@ async function customMessages(userText, message, say, userInfo) {
             break;
           }
           case "kraken": {
-            await validate_karken_symbols(userText, say);
+            await validate_kraken_symbols(userText, say);
             break;
           }
           case "kucoin": {
@@ -360,45 +377,59 @@ async function listOf_pm2_symbols(say) {
 }
 
 async function validateBinanceSymbols(userText, say) {
+  const symbolName = userText.split(" ")[1].toUpperCase();
+  if (symbolName.includes("-")) {
+    await say(`${symbolName} - please enter symbol name as given example => *BTCUSDT* for binance exchange`);
+    return;
+  }
   try {
-    let binance_ulr = `https://api.binance.com/api/v3/exchangeInfo?symbol=${userText.split(" ")[1].toUpperCase()}`;
+    let binance_ulr = `${binanceSymbolsUrl}${symbolName}`;
     const response = await axios(binance_ulr);
-    if (response.data?.symbols[0]?.symbol === userText.split(" ")[1].toUpperCase()) {
-      await say(`Binance symbol status: *${userText.split(" ")[1].toUpperCase()} - ${response.data?.symbols[0]?.status}*`);
+    if (response.data?.symbols[0]?.symbol === symbolName) {
+      await say(`Binance symbol status: *${symbolName} - ${response.data?.symbols[0]?.status}*`);
     } else {
-      await say(`*${userText.split(" ")[1].toUpperCase()}* - symbol not found in binance...`);
+      await say(`*${symbolName}* - symbol not found in binance...`);
     }
   } catch (err) {
     if (err?.response?.data?.msg === "Invalid symbol.") {
-      await say(`*${userText.split(" ")[1].toUpperCase()}* - symbol not found in binance exchange...`);
+      await say(`*${symbolName}* - symbol not found in binance exchange (or) please check the symbol name`);
     } else {
-      console.error(`Error fetching Binance status for symbol ${userText.split(" ")[1].toUpperCase()}`, err?.response?.data);
-      await say(`Error fetching from Binance. please check the symbol name`);
+      console.error(`Error fetching Binance status for symbol ${symbolName}`, err?.response?.data);
+      await say(`Error fetching ${symbolName} symbol from Binance exchange, please try again...`);
     }
   }
 }
 
 async function validateMexcSymbols(userText, say) {
+  const symbolName = userText.split(" ")[1].toUpperCase();
+  if (symbolName.includes("-")) {
+    await say(`${symbolName} - please enter symbol name as given example => *BTCUSDT* for MECX exchange`);
+    return;
+  }
   try {
-    const { data } = await axios.get(`https://api.mexc.com/api/v3/exchangeInfo?symbol=${userText.split(" ")[1].toUpperCase()}`);
-    if (data?.symbols[0]?.symbol === userText.split(" ")[1].toUpperCase()) {
-      await say(`*${userText.split(" ")[1].toUpperCase()}* spot trading status: ${data?.symbols[0]?.isSpotTradingAllowed}`);
+    const { data } = await axios.get(`${mexcSymbolsUrl}${symbolName}`);
+    if (data?.symbols[0]?.symbol === symbolName) {
+      await say(`*${symbolName}* spot trading status: ${data?.symbols[0]?.isSpotTradingAllowed}`);
     } else {
-      await say(`${userText.split(" ")[1].toUpperCase()} symbol not present in mexc exchange`);
+      await say(`*${symbolName}* symbol not present in mexc exchange (or) please check the symbol name`);
     }
   } catch (err) {
-    console.error("Fething error from mexc exchange", err);
+    await say(`Error fetching ${symbolName} symbol from MEXC exchange, please try again...`);
   }
 }
 
 async function validate_okx_symbols(userText, say) {
-  console.log(userText.split(" ")[1].toUpperCase());
-  const apiKey = "c1faafff-4f74-4acd-b070-f1b08ee0deee";
-  const secretKey = "7137CE2DFF453C92127C75E2C285C7C1";
-  const passphrase = "Qwerty@123";
+  const symbolName = userText.split(" ")[1].toUpperCase();
+  if (!symbolName.includes("-")) {
+    await say(`${symbolName} - please enter symbol name as given example => *BTC-USDT* for OKX exchange`);
+    return;
+  }
+  const apiKey = okxApiKey;
+  const secretKey = okxSecretKey;
+  const passphrase = okxPassphrase;
 
   const method = "GET";
-  const requestPath = `https://www.okx.com/api/v5/public/instruments?instType=SPOT&instId=${userText.split(" ")[1].toUpperCase()}`;
+  const requestPath = `${okxSymbolsUrl}${symbolName}`;
   const body = ""; // Empty for GET
   const timestamp = new Date().toISOString();
 
@@ -420,7 +451,7 @@ async function validate_okx_symbols(userText, say) {
       { timeout: 5000 }
     );
 
-    if (data?.data[0]?.instId === userText.split(" ")[1].toUpperCase()) {
+    if (data?.data[0]?.instId === symbolName) {
       await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - OKX symbol status: ${data?.data[0]?.state}`);
     } else {
       await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - symbol not present in OKX (or) please check the symbol name eg:(BTC-USDT)`);
@@ -430,40 +461,56 @@ async function validate_okx_symbols(userText, say) {
     catch_count++;
     if (catch_count < 5) {
       await validate_okx_symbols(userText, say);
+    } else {
+      await say(`Error fetching ${symbolName} symbol from OKX exchange, please try again...`);
     }
     console.error("❌ OKX exchange API error:", err?.response?.data || err?.message);
   }
 }
 
-async function validate_karken_symbols(userText, say) {
+async function validate_kraken_symbols(userText, say) {
+  const symbolName = userText.split(" ")[1].toUpperCase();
+  if (symbolName.includes("-")) {
+    await say(`${symbolName} - please enter symbol name as given example => *BTCUSDT* for kraken exchange`);
+    return;
+  }
   try {
-    const { data } = await axios(`https://api.kraken.com/0/public/AssetPairs?pair=${userText.split(" ")[1].toUpperCase()}`, {
+    const { data } = await axios(`${krakenSymbolsUrl}${symbolName}`, {
       timeout: 5000,
     });
 
-    if (data?.result[`${userText.split(" ")[1].toUpperCase()}`]) {
-      await say(`${userText.split(" ")[1].toUpperCase()} - Kraken symbol status: ${data?.result[`${userText.split(" ")[1].toUpperCase()}`]?.status}`);
+    if (data?.result[`${symbolName}`]) {
+      await say(`${symbolName} - Kraken symbol status: ${data?.result[`${symbolName}`]?.status}`);
     } else {
-      await say(`${userText.split(" ")[1].toUpperCase()} - symbol not present in Kraken exchange (or) please check the symbol name`);
+      await say(`${symbolName} - symbol not present in Kraken exchange (or) please check the symbol name`);
     }
     catch_count = 0;
   } catch (err) {
     catch_count++;
     if (catch_count < 5) {
-      await validate_karken_symbols(userText, say);
+      await validate_kraken_symbols(userText, say);
+    } else {
+      await say(`Error fetching ${symbolName} symbol from Kraken exchange, please try again...`);
     }
   }
 }
 
 async function validate_kucoin_symbol(userText, say) {
+  const symbolName = userText.split(" ")[1].toUpperCase();
+  if (!symbolName.includes("-")) {
+    await say(`${symbolName} - please enter symbol name as given example => *BTC-USDT*, for kucoin exchange`);
+    return;
+  }
   try {
-    const { data } = await axios(`https://api.kucoin.com/api/v2/symbols/${userText.split(" ")[1].toUpperCase()}`);
-    if (data?.data?.symbol === userText.split(" ")[1].toUpperCase()) {
-      await say(`${userText.split(" ")[1].toUpperCase()} - Kucoin symbol status: ${data?.data?.enableTrading}`);
+    const { data } = await axios(`${kucoinSymbolsUrl}${symbolName}`);
+    if (data?.data?.symbol === symbolName) {
+      await say(`Kucoin *${symbolName}* symbol status: *${data?.data?.enableTrading}*`);
     } else {
-      await say(`${userText.split(" ")[1].toUpperCase()} - symbol not present in kucoin exchange (or) please check the name eg:(BTC-USDT)`);
+      await say(`${symbolName} - symbol not present in kucoin exchange (or) please check the name eg:(BTC-USDT)`);
     }
-  } catch (error) {}
+  } catch (error) {
+    await say(`Error fetching ${symbolName} symbol from Kucoin exchange, please try again...`);
+  }
 }
 
 export { startSlack, disconnectSymbol, manuallyDisconnected, prioritySymbols, disconnectedUser, pm2Symbol, pm2SymbolStatus };
