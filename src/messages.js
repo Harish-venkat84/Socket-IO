@@ -1,13 +1,12 @@
 import { slackChannel } from "./slack.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
-import { messageApp, feeder } from "./index.js";
+import { messageApp, feeder, traderUrl, socketIntervalSeconds, socketCandleStickSeconds } from "./index.js";
 import { disconnectSymbol, prioritySymbols } from "./slackBot.js";
-import { socketIntervalSeconds, socketCandleStickSeconds, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
 import { binanceTradePage } from "./getSymbols.js";
 
 function slackMessage(url, alertMessage) {
   const { exchange, symbol, exchangeUrl } = getExchangeAndSymbol(url);
-  const websiteUrl = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
+  const websiteUrl = traderUrl;
 
   let finalMessage;
   let webUrl = websiteUrl + symbol;
@@ -114,7 +113,7 @@ function telegramBotMessage(url, alertMessage) {
   telegramBot(finalMessage, symbol);
 }
 
-function getTime() {
+export function getTime() {
   const now = new Date();
   const options = {
     timeZone: "Asia/Kolkata",
@@ -129,7 +128,7 @@ function getTime() {
   return new Intl.DateTimeFormat("en-GB", options).format(now);
 }
 
-function sendAlertMessage(url, alertMessage) {
+export function sendAlertMessage(url, alertMessage) {
   if (messageApp === "slack") {
     slackMessage(url, alertMessage);
   } else {
@@ -137,7 +136,7 @@ function sendAlertMessage(url, alertMessage) {
   }
 }
 
-function telegramBotCommandStatus(activeSockets, listOfSymbols) {
+export function telegramBotCommandStatus(activeSockets, listOfSymbols) {
   const exchange = `${feeder === "staging" ? "PIX-Staging" : feeder === "unicoindcx" ? "UniCoinDCX" : "Zebacus"}`;
   let count = 0;
   activeSockets.forEach((socket) => {
@@ -157,5 +156,3 @@ function telegramBotCommandStatus(activeSockets, listOfSymbols) {
         `
     : "No active sockets... please wait for socket to connect";
 }
-
-export { sendAlertMessage, getTime, telegramBotCommandStatus };

@@ -7,20 +7,7 @@ import { telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot, disconnectBot } from "./telegramBotCommands.js";
 import getSymbols from "./getSymbols.js";
 import crypto from "crypto";
-import {
-  feeder,
-  slackStagingBotToken,
-  slackStagingAppToken,
-  slackUnicoinDcxAppToken,
-  slackUnicoinDcxBotToken,
-  slackZebacusAppToken,
-  slackZebacusBotToken,
-  stagingUrl,
-  uniCoinDcxUrl,
-  zebacusUrl,
-  slackLocalAppToken,
-  slackLocalBotToken,
-} from "./index.js";
+import { traderUrl, slackAppToken, slackBotToken } from "./index.js";
 
 const { App } = pkg;
 let messageStatus = false;
@@ -28,7 +15,6 @@ const disconnectSymbol = new Set();
 let disconnectedUser = new Map();
 const manuallyDisconnected = new Map();
 const prioritySymbols = new Set();
-const websiteUrl = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
 let addedDisconnectSymbol = false;
 let addedPrioritySymbols = false;
 const pm2Symbol = new Set();
@@ -37,20 +23,13 @@ const pm2SymbolStatus = new Map();
 let catch_count = 0;
 
 async function startSlack() {
-  const { appToken, botToken } =
-    feeder === "staging"
-      ? { appToken: slackStagingAppToken, botToken: slackStagingBotToken }
-      : feeder === "unicoindcx"
-      ? { appToken: slackUnicoinDcxAppToken, botToken: slackUnicoinDcxBotToken }
-      : { appToken: slackZebacusAppToken, botToken: slackZebacusBotToken };
-
   const app = new App({
-    token: botToken,
-    appToken: appToken,
+    token: slackBotToken,
+    appToken: slackAppToken,
     socketMode: true, // Enables real-time event listening
   });
 
-  const web = new WebClient(botToken);
+  const web = new WebClient(slackBotToken);
 
   app.message(async ({ message, say }) => {
     if (!message?.text) return;
@@ -92,7 +71,7 @@ async function symbolsStatus(userText, say) {
           \n📈 Candlestick last updated: ${candlestick_lastUpdated}
           \n➤ Ticker last updated: ${ticker_lastUpdated}
           \n📌 Last price: ${last_price}
-          \n🔗 URL: ${websiteUrl + symbol}`
+          \n🔗 URL: ${traderUrl + symbol}`
       );
       break;
     }
@@ -419,7 +398,7 @@ async function validate_okx_symbols(userText, say) {
   const passphrase = "Qwerty@123";
 
   const method = "GET";
-  const requestPath = `/api/v5/public/instruments?instType=SPOT&instId=${userText.split(" ")[1].toUpperCase()}`;
+  const requestPath = `https://www.okx.com/api/v5/public/instruments?instType=SPOT&instId=${userText.split(" ")[1].toUpperCase()}`;
   const body = ""; // Empty for GET
   const timestamp = new Date().toISOString();
 
@@ -428,7 +407,7 @@ async function validate_okx_symbols(userText, say) {
 
   try {
     const { data } = await axios.get(
-      `https://www.okx.com${requestPath}`,
+      requestPath,
       {
         headers: {
           "OK-ACCESS-KEY": apiKey,
@@ -458,7 +437,7 @@ async function validate_okx_symbols(userText, say) {
 
 async function validate_karken_symbols(userText, say) {
   try {
-    const { data } = await axios(`https://api.kraken.com/0/public/AssetPairs?pair=${userText.split(" ")[1].toUpperCase()}&info=info`, {
+    const { data } = await axios(`https://api.kraken.com/0/public/AssetPairs?pair=${userText.split(" ")[1].toUpperCase()}`, {
       timeout: 5000,
     });
 

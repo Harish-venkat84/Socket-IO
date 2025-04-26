@@ -1,31 +1,16 @@
-import {
-  feeder,
-  stagingSymbolsApi,
-  unicoinDcxSymbolsApi,
-  zebacusSymbolsApi,
-  stagingSocketUrl,
-  uniCoinDcxSocketUrl,
-  zebacusSocketUrl,
-  stagingAdminSettingApi,
-  unicoindcxAdminSettingApi,
-  zebacusAdminSettingApi,
-  stagingFileViewApi,
-  unicoindcxFileViewApi,
-  zebacusFileViewApi,
-} from "./index.js";
+import { traderSymbolApi, socketUrl, adminSetting, traderFileView, binanceSymbolsUrl } from "./index.js";
 import axios from "axios";
 import { sendAlertMessage } from "./messages.js";
 import { disconnectSymbol } from "./slackBot.js";
 
-const apiUrl = feeder === "staging" ? stagingSymbolsApi : feeder === "unicoindcx" ? unicoinDcxSymbolsApi : zebacusSymbolsApi;
 const set_symbols_base_quote = new Set();
 let symbolsArray;
-let binanceTradePage;
+export let binanceTradePage;
 
-async function getSymbols() {
+export default async function getSymbols() {
   set_symbols_base_quote.clear();
   symbolsArray = new Set(
-    await axios.get(apiUrl).then((response) =>
+    await axios.get(traderSymbolApi).then((response) =>
       response?.data?.data
         .filter((symbol) => symbol?.spot && symbol?.is_active && !symbol?.is_new)
         .map((data) => {
@@ -43,54 +28,28 @@ async function getSymbols() {
       addurl.add(value.toUpperCase());
     });
 
-    return new Set(
-      [...symbolsArray]
-        .filter((value) => !addurl.has(value))
-        .map((value) => {
-          if (feeder === "staging") return stagingSocketUrl + "feeder-" + value.toUpperCase();
-          else if (feeder === "unicoindcx") return uniCoinDcxSocketUrl + "feeder-" + value.toUpperCase();
-          else return zebacusSocketUrl + "feeder-" + value.toUpperCase();
-        })
-    );
+    return new Set([...symbolsArray].filter((value) => !addurl.has(value)).map((value) => socketUrl + "feeder-" + value.toUpperCase()));
   }
 
-  return new Set(
-    [...symbolsArray].map((value) => {
-      if (feeder === "staging") return stagingSocketUrl + "feeder-" + value.toUpperCase();
-      else if (feeder === "unicoindcx") return uniCoinDcxSocketUrl + "feeder-" + value.toUpperCase();
-      else return zebacusSocketUrl + "feeder-" + value.toUpperCase();
-    })
-  );
+  return new Set([...symbolsArray].map((value) => socketUrl + "feeder-" + value.toUpperCase()));
 }
 
-async function getLogoUrl() {
-  let adminUrl;
-  let fileViewUrl;
+export async function getLogoUrl() {
   let logoUrl;
 
-  if (feeder === "staging") {
-    adminUrl = stagingAdminSettingApi;
-    fileViewUrl = stagingFileViewApi;
-  } else if (feeder === "unicoindcx") {
-    adminUrl = unicoindcxAdminSettingApi;
-    fileViewUrl = unicoindcxFileViewApi;
-  } else if (feeder === "zebacus") {
-    adminUrl = zebacusAdminSettingApi;
-    fileViewUrl = zebacusFileViewApi;
-  }
   await axios
-    .get(adminUrl)
-    .then((data) => (logoUrl = `${fileViewUrl}${data?.data?.logo.logo}`))
+    .get(adminSetting)
+    .then((data) => (logoUrl = `${traderFileView}${data?.data?.logo.logo}`))
     .catch((err) => (logoUrl = "failed"));
 
   return logoUrl;
 }
 
-async function getBinanceSymbolStatus(url, symbolName) {
+export async function getBinanceSymbolStatus(url, symbolName) {
   for (const value of set_symbols_base_quote) {
     if (value.symbol === symbolName) {
       try {
-        let binance_ulr = `https://api.binance.com/api/v3/exchangeInfo?symbol=${value.symbol}`;
+        let binance_ulr = `${binanceSymbolsUrl}${value.symbol}`;
         const response = await axios(binance_ulr);
         if (response.data?.symbols[0]?.status === "BREAK") {
           binanceTradePage = `https://www.binance.com/en-IN/trade/${value.base_asset}_${value.quote_asset}?type=spot`;
@@ -103,6 +62,3 @@ async function getBinanceSymbolStatus(url, symbolName) {
     }
   }
 }
-
-export default getSymbols;
-export { getLogoUrl, getBinanceSymbolStatus, binanceTradePage };

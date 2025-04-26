@@ -1,11 +1,11 @@
 import axios from "axios";
 import { getLogoUrl } from "./getSymbols.js";
-import { feeder, getTelegramBotToken, telegramBotChatId, telegramGroupChatId, stagingUrl, uniCoinDcxUrl, zebacusUrl } from "./index.js";
+import { traderUrl, telegramBotToken, telegramBotChatId, telegramGroupChatId } from "./index.js";
 
-const telegramBotApiUrl = `https://api.telegram.org/bot${getTelegramBotToken()}/sendPhoto`;
-const url = `${feeder === "staging" ? stagingUrl : feeder === "unicoindcx" ? uniCoinDcxUrl : zebacusUrl}`;
+const telegramBotApiUrl = `https://api.telegram.org/bot${telegramBotToken}/sendPhoto`;
+const url = traderUrl;
 
-async function telegramBot(message, symbol) {
+export async function telegramBot(message, symbol) {
   const imageUrl = await getLogoUrl();
   const finalImageUrl =
     imageUrl !== "failed"
@@ -36,7 +36,7 @@ async function telegramBot(message, symbol) {
     });
 }
 
-function telegramGroup(message, symbol) {
+export function telegramGroup(message, symbol) {
   const chat_id = telegramGroupChatId;
   axios
     .post(telegramBotApiUrl, {
@@ -51,14 +51,12 @@ function telegramGroup(message, symbol) {
     .catch((res) => {});
 }
 
-function getExchangeAndSymbol(socketUrl) {
+export function getExchangeAndSymbol(socketUrl) {
   let exchange = socketUrl.includes("staging") ? "PIX-Staging" : socketUrl.includes("unicoindcx") ? "UniCoinDCX" : "zebacus";
 
   let symbol = socketUrl.split("/")[3].substring(7).toUpperCase();
 
-  let exchangeUrl = exchange === "PIX-Staging" ? stagingUrl + symbol : exchange === "UniCoinDCX" ? uniCoinDcxUrl + symbol : zebacusUrl + symbol;
+  let exchangeUrl = traderUrl + symbol;
 
   return { exchange, symbol, exchangeUrl };
 }
-
-export { telegramBot, telegramGroup, getExchangeAndSymbol };

@@ -1,123 +1,56 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".././.env" });
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const feeder = process.env.FEEDER;
-const messageApp = process.env.MESSAGE_APP;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const setIntervalSeconds = Number(process.env.SETENTERVAL_SECONDS);
-const socketIntervalSeconds = Number(process.env.SOCKET_INTERVAL_SECONDS);
-const socketCandleStickSeconds = Number(process.env.SOCKET_CANDLESTICK_SECONDS);
-const activeSocketsIntervalSeconds = Number(process.env.ACTIVE_SOCKETS_INTERVAL_SECONDS);
-const pm2RestartIntervalSeconds = Number(process.env.PM2_RESTART_INTERVAL_SECONDS);
-const prometheusAlertmanager = process.env.PROMETHEUS_ALERTMANAGER;
+const env = process.env.ENV || 'local';
 
-const slackStagingBotToken = process.env.SLACK_STAGING_BOT_TOKEN;
-const slackStagingAppToken = process.env.SLACK_STAGING_APP_TOKEN;
+dotenv.config({
+  path: path.resolve(__dirname, `.././.env.${env}`),
+});
+console.log("env =>", env, path.resolve(__dirname, `.././.env.${env}`))
 
-const slackUnicoinDcxBotToken = process.env.SLACK_UNICOINDCX_BOT_TOKEN;
-const slackUnicoinDcxAppToken = process.env.SLACK_UNICOINDCX_APP_TOKEN;
+export const feeder = process.env.FEEDER;
+export const messageApp = process.env.MESSAGE_APP;
 
-const slackZebacusBotToken = process.env.SLACK_ZEBACUS_BOT_TOKEN;
-const slackZebacusAppToken = process.env.SLACK_ZEBACUS_APP_TOKEN;
+export const setIntervalSeconds = Number(process.env.SETENTERVAL_SECONDS);
+export const socketIntervalSeconds = Number(process.env.SOCKET_INTERVAL_SECONDS);
+export const socketCandleStickSeconds = Number(process.env.SOCKET_CANDLESTICK_SECONDS);
+export const activeSocketsIntervalSeconds = Number(process.env.ACTIVE_SOCKETS_INTERVAL_SECONDS);
+export const pm2RestartIntervalSeconds = Number(process.env.PM2_RESTART_INTERVAL_SECONDS);
+export const prometheusAlertmanager = process.env.PROMETHEUS_ALERTMANAGER;
 
-const slackLocalBotToken = process.env.SLACK_LOCAL_BOT_TOKEN;
-const slackLocalAppToken = process.env.SLACK_LOCAL_APP_TOKEN;
+export const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+export const telegramBotChatId = process.env.TELEGRAM_BOT_CHAT_ID;
+export const telegramGroupChatId = process.env.TELEGRAM_GROUP_CHAT_ID;
 
-const telegramBotTokenUincoindcx = process.env.TELEGRAM_BOT_TOKEN_UNICOINDCX;
-const telegramBotTokenZebacus = process.env.TELEGRAM_BOT_TOKEN_ZEBACUS;
-const telegramBotTokenStaging = process.env.TELEGRAM_BOT_TOKEN_STAGING;
+export const slackChannelUrl = process.env.SLACK_CHANNEL_URL;
+export const slackChannelName = process.env.SLACK_CHANNEL_NAME;
 
-const telegramBotChatId = process.env.TELEGRAM_BOT_CHAT_ID;
-const telegramGroupChatId = process.env.TELEGRAM_GROUP_CHAT_ID;
+export const slackBotToken = process.env.SLACK_BOT_TOKEN;
+export const slackAppToken = process.env.SLACK_APP_TOKEN;
 
-const slackStagingChannelUrl = process.env.SLACK_STAGING_CHANNEL_URL;
-const slackStagingChannelName = process.env.SLACK_STAGING_CHANNEL_NAME;
+export const traderUrl = process.env.TRADER_URL;
+export const socketUrl = process.env.SOCKET_URL;
+export const traderSymbolApi = process.env.TRADER_SYMBOLS_API;
+export const traderFileView = process.env.TRADER_FILE_VIEW;
+export const adminSetting = process.env.ADMIN_SETTING;
 
-const slackUnicoinDcxChannelUrl = process.env.SLACK_UNICOIN_DCX_CHANNEL_URL;
-const slackUnicoinDcxChannelName = process.env.SLACK_UNICOIN_DCX_CHANNEL_NAME;
+export const admin_gateway = process.env.ADMIN_GATEWAY;
+export const trader_gateway = process.env.TRADER_GETWAY;
+export const crm_gateway = process.env.CRM_GETWAY;
+export const exchange_gateway = process.env.EXCHANGE_GETWAY;
 
-const slackZebacusChannelUrl = process.env.SLACK_ZEBACUS_CHANNEL_URL;
-const slackZebacusChannelName = process.env.SLACK_ZEBACUS_CHANNEL_NAME;
+export const binanceSymbolsUrl = process.env.BINANCE_SYMBOLS_URL;
+export const mexcSymbolsUrl = process.env.MEXC_SYMBOLS_URL;
 
-const stagingUrl = process.env.STAGING_URL;
-const uniCoinDcxUrl = process.env.UNICOIN_DCX_URL;
-const zebacusUrl = process.env.ZEBACUS_URL;
+export const okxApiKey = process.env.OKX_APIKEY;
+export const okxSecretKey = process.env.OKX_SECRETKEY;
+export const okxPassphrase = process.env.OKX_PASSPHRASE;
+export const okxSymbolsUrl = process.env.OKX_SYMBOLS_URL;
 
-const stagingSocketUrl = process.env.STAGING_SOCKET_URL;
-const uniCoinDcxSocketUrl = process.env.UNICOIN_DCX_SOCKET_URL;
-const zebacusSocketUrl = process.env.ZEBACUS_SOCKET_URL;
+export const kucoinSymbolsUrl = process.env.KUCOIN_SYMBOLS_URL;
 
-const stagingSymbolsApi = process.env.STAGING_SYMBOLS_API;
-const unicoinDcxSymbolsApi = process.env.UNICOIN_DCX_SYMBOLS_API;
-const zebacusSymbolsApi = process.env.ZEBACUS_SYMOLS_API;
-
-const stagingAdminSettingApi = process.env.STAGING_ADMIN_SETTING;
-const unicoindcxAdminSettingApi = process.env.UNICOIN_DCX_ADMIN_SETTING;
-const zebacusAdminSettingApi = process.env.ZEBACUS_ADMIN_SETTING;
-
-const stagingFileViewApi = process.env.STAGING_FILE_VIEW;
-const unicoindcxFileViewApi = process.env.UNICOIN_DCX_FILE_VIEW;
-const zebacusFileViewApi = process.env.ZEBACUS_FILE_VIEW;
-
-const admin_gateway = process.env.ADMIN_GATEWAY;
-const trader_gateway = process.env.TRADER_GETWAY;
-const crm_gateway = process.env.CRM_GETWAY;
-const exchange_gateway = process.env.EXCHANGE_GETWAY;
-
-function getTelegramBotToken() {
-  if (feeder === "unicoindcx") {
-    return telegramBotTokenUincoindcx;
-  } else if (feeder === "zebacus") {
-    return telegramBotTokenZebacus;
-  } else {
-    return telegramBotTokenStaging;
-  }
-}
-
-export {
-  feeder,
-  messageApp,
-  setIntervalSeconds,
-  socketIntervalSeconds,
-  socketCandleStickSeconds,
-  activeSocketsIntervalSeconds,
-  pm2RestartIntervalSeconds,
-  prometheusAlertmanager,
-  getTelegramBotToken,
-  telegramBotChatId,
-  telegramGroupChatId,
-  slackStagingBotToken,
-  slackStagingAppToken,
-  slackUnicoinDcxBotToken,
-  slackUnicoinDcxAppToken,
-  slackZebacusBotToken,
-  slackZebacusAppToken,
-  slackStagingChannelUrl,
-  slackStagingChannelName,
-  slackUnicoinDcxChannelUrl,
-  slackUnicoinDcxChannelName,
-  slackZebacusChannelUrl,
-  slackZebacusChannelName,
-  stagingUrl,
-  uniCoinDcxUrl,
-  zebacusUrl,
-  stagingSocketUrl,
-  uniCoinDcxSocketUrl,
-  zebacusSocketUrl,
-  stagingSymbolsApi,
-  unicoinDcxSymbolsApi,
-  zebacusSymbolsApi,
-  stagingAdminSettingApi,
-  unicoindcxAdminSettingApi,
-  zebacusAdminSettingApi,
-  stagingFileViewApi,
-  unicoindcxFileViewApi,
-  zebacusFileViewApi,
-  slackLocalBotToken,
-  slackLocalAppToken,
-  slackLocalChannelUrl,
-  admin_gateway,
-  crm_gateway,
-  trader_gateway,
-  exchange_gateway,
-};
+export const krakenSymbolsUrl = process.env.KRAKEN_SYMBOLS_URL;
