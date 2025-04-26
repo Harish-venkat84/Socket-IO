@@ -1,5 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
-import { getTelegramBotToken } from "./index.js";
+import { telegramBotToken } from "./index.js";
 import { telegramBotCommandStatus } from "./messages.js";
 import { socketDetails, listOfSymbols } from "./socketIO.js";
 import { getExchangeAndSymbol } from "./telegramBot.js";
@@ -19,9 +19,9 @@ async function setCommands(bot) {
 }
 
 // Initialize bot and set commands after a delay
-let bot = new TelegramBot(getTelegramBotToken(), { polling: true });
+let bot = new TelegramBot(telegramBotToken, { polling: true });
 
-async function startTelegarmBot() {
+export async function startTelegarmBot() {
   setTimeout(() => {
     setCommands(bot);
 
@@ -73,11 +73,9 @@ async function startTelegarmBot() {
   }, 5000); // Small delay to ensure bot is ready
 }
 
-function disconnectBot() {
+export function disconnectBot() {
   bot.removeAllListeners();
   bot.stopPolling();
   bot.off();
   bot.close();
 }
-
-export { startTelegarmBot, disconnectBot };

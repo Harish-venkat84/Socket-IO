@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "socketIO.js",
   "scripts": {
-    "start": "node -r dotenv/config src/socketIO.js"
+    "start": "node -r dotenv/config src/socketIO.js",
+    "local": "cross-env ENV=local node src/socketIO.js",
+    "unicoindcx": "cross-env ENV=unicoindcx node src/socketIO.js",
+    "zebacus": "cross-env ENV=zebacus node src/socketIO.js"
   },
   "keywords": [],
   "author": "",
@@ -17,5 +20,8 @@
     "dotenv": "^16.4.7",
     "node-telegram-bot-api": "^0.66.0",
     "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }
