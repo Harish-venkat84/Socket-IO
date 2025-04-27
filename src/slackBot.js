@@ -5,7 +5,7 @@ import { socketDetails, listOfSymbols } from "./socketIO.js";
 import { getExchangeAndSymbol } from "./telegramBot.js";
 import { telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot, disconnectBot } from "./telegramBotCommands.js";
-import getSymbols from "./getSymbols.js";
+import getSymbols, { other_exchange_pair_validate } from "./getSymbols.js";
 import crypto from "crypto";
 import {
   traderUrl,
@@ -32,7 +32,7 @@ let addedPrioritySymbols = false;
 const pm2Symbol = new Set();
 let addedPm2Symbols = false;
 const pm2SymbolStatus = new Map();
-let catch_count = 0;
+let other_exchange = false;
 
 async function startSlack() {
   const app = new App({
@@ -41,26 +41,19 @@ async function startSlack() {
     socketMode: true, // Enables real-time event listening
   });
 
-  const web = new WebClient(slackBotToken);
-
   app.message(async ({ message, say }) => {
     if (!message?.text) return;
-    let userInfo;
-    try {
-      userInfo = await web.users.info({ user: message.user });
-    } catch (error) {
-      console.log("error getting slack user name");
-    }
+
     let userText;
     if (message.text.includes("*")) {
-      userText = message.text.substr(1, message.text.length - 2).toLowerCase();
+      userText = message.text.replace(/\*/g, "").toLowerCase();
     } else {
       userText = message.text.toLowerCase();
     }
 
     symbolsStatus(userText, say);
 
-    customMessages(userText, message, say, userInfo);
+    customMessages(userText, message, say);
 
     messageStatus = false;
     addedDisconnectSymbol = false;
@@ -95,7 +88,7 @@ async function symbolsStatus(userText, say) {
   }
 }
 
-async function customMessages(userText, message, say, userInfo) {
+async function customMessages(userText, message, say) {
   switch (userText) {
     case "status": {
       await say(telegramBotCommandStatus(socketDetails, listOfSymbols));
@@ -126,6 +119,10 @@ async function customMessages(userText, message, say, userInfo) {
 
     case "pm2 symbols": {
       listOf_pm2_symbols(say);
+      break;
+    }
+    case "other exchange": {
+      validateExchangeSymbols(say);
       break;
     }
 
@@ -172,7 +169,7 @@ async function customMessages(userText, message, say, userInfo) {
         }
       } else {
         if (userText.includes("-")) {
-          addSymbolsToDisconnect(userText, say, userInfo);
+          addSymbolsToDisconnect(userText, say, message);
         } else if (userText.includes("+")) {
           deleteSmbolsDisconnectMap(userText, say);
         } else if (message.user === undefined || userText.includes("joined")) {
@@ -235,7 +232,12 @@ async function helpCommand(say) {
     *priority symbols* - list of symbols added to priority for candlestick 60 seconds\n
     *pm2_add symbol name* eg(pm2_add ETHUSDT) - To add to pm2 symbols\n
     *pm2_delete symbol name* eg(pm2_delete ETHUSDT) - To delete the symbols from pm2 list\n
-    *pm2 symbols* - list of symbols added to pm2`);
+    *pm2 symbols* - list of symbols added to pm2\n
+    *binance BTCUSDT* - To check symbol status in Binance exchange\n
+    *mexc BTCUSDT* - To check symbol status in MEXC exchange\n
+    *okx BTC-USDT* - To check symbol status in OKX exchange\n
+    *kraken BTCUSDT* To check symbol status in Kraken exchange\n
+    *kucoin BTCU-SDT* - To check symbol status in Kraken exchange\n`);
 }
 
 async function listOfDisconnectedSymbols(say) {
@@ -251,7 +253,14 @@ async function listOfDisconnectedSymbols(say) {
   }
 }
 
-async function addSymbolsToDisconnect(userText, say, userInfo) {
+async function addSymbolsToDisconnect(userText, say, message) {
+  let userInfo;
+  try {
+    const web = new WebClient(slackBotToken);
+    userInfo = await web.users.info({ user: message.user });
+  } catch (error) {
+    console.log("error getting slack user name");
+  }
   (await getSymbols()).forEach(async (value) => {
     let { symbol } = getExchangeAndSymbol(value);
     if (userText.split("-")[1].toLowerCase() === symbol.toLowerCase()) {
@@ -376,7 +385,7 @@ async function listOf_pm2_symbols(say) {
   }
 }
 
-async function validateBinanceSymbols(userText, say) {
+async function validateBinanceSymbols(userText, say, messageStatus = true) {
   const symbolName = userText.split(" ")[1].toUpperCase();
   if (symbolName.includes("-")) {
     await say(`${symbolName} - please enter symbol name as given example => *BTCUSDT* for binance exchange`);
@@ -384,10 +393,13 @@ async function validateBinanceSymbols(userText, say) {
   }
   try {
     let binance_ulr = `${binanceSymbolsUrl}${symbolName}`;
-    const response = await axios(binance_ulr);
-    if (response.data?.symbols[0]?.symbol === symbolName) {
+    const response = await axios.get(binance_ulr);
+    if (response.data?.symbols[0]?.symbol === symbolName && messageStatus) {
       await say(`Binance symbol status: *${symbolName} - ${response.data?.symbols[0]?.status}*`);
-    } else {
+    } else if (response.data?.symbols[0]?.symbol === symbolName && !messageStatus && response.data?.symbols[0]?.status !== "TRADING") {
+      other_exchange = true;
+      await say(`Binance symbol status: *${symbolName} - ${response.data?.symbols[0]?.status}*`);
+    } else if (messageStatus) {
       await say(`*${symbolName}* - symbol not found in binance...`);
     }
   } catch (err) {
@@ -400,7 +412,7 @@ async function validateBinanceSymbols(userText, say) {
   }
 }
 
-async function validateMexcSymbols(userText, say) {
+async function validateMexcSymbols(userText, say, messageStatus = true) {
   const symbolName = userText.split(" ")[1].toUpperCase();
   if (symbolName.includes("-")) {
     await say(`${symbolName} - please enter symbol name as given example => *BTCUSDT* for MECX exchange`);
@@ -408,9 +420,12 @@ async function validateMexcSymbols(userText, say) {
   }
   try {
     const { data } = await axios.get(`${mexcSymbolsUrl}${symbolName}`);
-    if (data?.symbols[0]?.symbol === symbolName) {
+    if (data?.symbols[0]?.symbol === symbolName && messageStatus) {
       await say(`*${symbolName}* spot trading status: ${data?.symbols[0]?.isSpotTradingAllowed}`);
-    } else {
+    } else if (data?.symbols[0]?.symbol === symbolName && !messageStatus && !data?.symbols[0]?.isSpotTradingAllowed) {
+      other_exchange = true;
+      await say(`*${symbolName}* spot trading status: ${data?.symbols[0]?.isSpotTradingAllowed}`);
+    } else if (messageStatus) {
       await say(`*${symbolName}* symbol not present in mexc exchange (or) please check the symbol name`);
     }
   } catch (err) {
@@ -418,7 +433,7 @@ async function validateMexcSymbols(userText, say) {
   }
 }
 
-async function validate_okx_symbols(userText, say) {
+async function validate_okx_symbols(userText, say, messageStatus = true) {
   const symbolName = userText.split(" ")[1].toUpperCase();
   if (!symbolName.includes("-")) {
     await say(`${symbolName} - please enter symbol name as given example => *BTC-USDT* for OKX exchange`);
@@ -448,68 +463,114 @@ async function validate_okx_symbols(userText, say) {
           "Content-Type": "application/json",
         },
       },
-      { timeout: 5000 }
+      { timeout: 10000 }
     );
 
-    if (data?.data[0]?.instId === symbolName) {
+    if (data?.data[0]?.instId === symbolName && messageStatus) {
       await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - OKX symbol status: ${data?.data[0]?.state}`);
-    } else {
+    } else if (data?.data[0]?.instId === symbolName && !messageStatus && data?.data[0]?.state !== "live") {
+      other_exchange = true;
+      await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - OKX symbol status: ${data?.data[0]?.state}`);
+    } else if (messageStatus) {
       await say(`${data?.data[0]?.baseCcy}${data.data[0].quoteCcy} - symbol not present in OKX (or) please check the symbol name eg:(BTC-USDT)`);
     }
-    catch_count = 0;
   } catch (err) {
-    catch_count++;
-    if (catch_count < 5) {
-      await validate_okx_symbols(userText, say);
-    } else {
-      await say(`Error fetching ${symbolName} symbol from OKX exchange, please try again...`);
-    }
+    await say(`Error fetching ${symbolName} symbol from OKX exchange, please try again...`);
     console.error("❌ OKX exchange API error:", err?.response?.data || err?.message);
   }
 }
 
-async function validate_kraken_symbols(userText, say) {
+async function validate_kraken_symbols(userText, say, messageStatus = true) {
   const symbolName = userText.split(" ")[1].toUpperCase();
   if (symbolName.includes("-")) {
     await say(`${symbolName} - please enter symbol name as given example => *BTCUSDT* for kraken exchange`);
     return;
   }
   try {
-    const { data } = await axios(`${krakenSymbolsUrl}${symbolName}`, {
-      timeout: 5000,
+    const { data } = await axios.get(krakenSymbolsUrl, {
+      params: { pair: symbolName },
+      timeout: 10000,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Encoding": "gzip, compress, deflate, br",
+      },
     });
 
-    if (data?.result[`${symbolName}`]) {
-      await say(`${symbolName} - Kraken symbol status: ${data?.result[`${symbolName}`]?.status}`);
+    if (data?.result) {
+      for (const [key, value] of Object.entries(data?.result)) {
+        if ((key === symbolName || value?.altname === symbolName) && messageStatus) {
+          await say(`${symbolName} - Kraken symbol status: ${value?.status}`);
+        } else if ((key === symbolName || value?.altname === symbolName) && !messageStatus && value?.status !== "online") {
+          other_exchange = true;
+          await say(`${symbolName} - Kraken symbol status: ${value?.status}`);
+        } else if (messageStatus) {
+          await say(`${symbolName} - symbol not present in Kraken exchange (or) please check the symbol name`);
+        }
+      }
     } else {
       await say(`${symbolName} - symbol not present in Kraken exchange (or) please check the symbol name`);
     }
-    catch_count = 0;
   } catch (err) {
-    catch_count++;
-    if (catch_count < 5) {
-      await validate_kraken_symbols(userText, say);
-    } else {
-      await say(`Error fetching ${symbolName} symbol from Kraken exchange, please try again...`);
-    }
+    await say(`Error fetching ${symbolName} symbol from Kraken exchange, please try again...`);
   }
 }
 
-async function validate_kucoin_symbol(userText, say) {
+async function validate_kucoin_symbol(userText, say, messageStatus = true) {
   const symbolName = userText.split(" ")[1].toUpperCase();
   if (!symbolName.includes("-")) {
     await say(`${symbolName} - please enter symbol name as given example => *BTC-USDT*, for kucoin exchange`);
     return;
   }
   try {
-    const { data } = await axios(`${kucoinSymbolsUrl}${symbolName}`);
-    if (data?.data?.symbol === symbolName) {
+    const { data } = await axios.get(`${kucoinSymbolsUrl}${symbolName}`);
+    if (data?.data?.symbol === symbolName && messageStatus) {
       await say(`Kucoin *${symbolName}* symbol status: *${data?.data?.enableTrading}*`);
-    } else {
+    } else if (data?.data?.symbol === symbolName && !messageStatus && !data?.data?.enableTrading) {
+      other_exchange = true;
+      await say(`Kucoin *${symbolName}* symbol status: *${data?.data?.enableTrading}*`);
+    } else if (messageStatus) {
       await say(`${symbolName} - symbol not present in kucoin exchange (or) please check the name eg:(BTC-USDT)`);
     }
   } catch (error) {
     await say(`Error fetching ${symbolName} symbol from Kucoin exchange, please try again...`);
+  }
+}
+
+async function validateExchangeSymbols(say) {
+  if (other_exchange_pair_validate.size > 0) {
+    const exchange_symbols = new Set();
+    other_exchange_pair_validate.forEach((value) => exchange_symbols.add(value));
+    await say("please wait it may take sometime....");
+    for (const all_symbols of exchange_symbols) {
+      if (all_symbols?.BINANCE) {
+        const pair = `binance ${all_symbols?.symbol}`;
+        validateBinanceSymbols(pair, say, false);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      } else if (all_symbols?.OKX) {
+        const pair = `okx ${all_symbols?.base_asset}-${all_symbols?.quote_asset}`;
+        validate_okx_symbols(pair, say, false);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } else if (all_symbols?.MEXC) {
+        const pair = `mexc ${all_symbols?.symbol}`;
+        validateMexcSymbols(pair, say, false);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } else if (all_symbols?.KRAKEN) {
+        const pair = `kraken ${all_symbols?.symbol}`;
+        validate_kraken_symbols(pair, say, false);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } else if (all_symbols?.KUCOIN) {
+        const pair = `kucoin ${all_symbols?.base_asset}-${all_symbols?.quote_asset}`;
+        validate_kucoin_symbol(pair, say, false);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+    exchange_symbols.clear();
+  }
+
+  if (!other_exchange) {
+    await say(`other exchange symbols are fine...`);
+  } else {
+    other_exchange = false;
   }
 }
 
