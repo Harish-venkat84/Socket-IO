@@ -4,11 +4,13 @@ import { sendAlertMessage } from "./messages.js";
 import { disconnectSymbol } from "./slackBot.js";
 
 const set_symbols_base_quote = new Set();
+export const other_exchange_pair_validate = new Set();
 let symbolsArray;
 export let binanceTradePage;
 
 export default async function getSymbols() {
   set_symbols_base_quote.clear();
+  other_exchange_pair_validate.clear();
   symbolsArray = new Set(
     await axios.get(traderSymbolApi).then((response) =>
       response?.data?.data
@@ -16,6 +18,14 @@ export default async function getSymbols() {
         .map((data) => {
           if (data?.external_exchanges?.BINANCE === true) {
             set_symbols_base_quote.add({ symbol: data.symbol, base_asset: data.base_asset, quote_asset: data.quote_asset });
+          }
+          if (data?.external_exchanges) {
+            other_exchange_pair_validate.add({
+              symbol: data.symbol,
+              base_asset: data.base_asset,
+              quote_asset: data.quote_asset,
+              ...data.external_exchanges,
+            });
           }
           return data.symbol;
         })
