@@ -1,8 +1,8 @@
 import axios from "axios";
-import { slackChannelUrl, slackChannelName, prometheusAlertmanager } from "./index.js";
+import { prometheusAlertmanager } from "./index.js";
 
-export function slackChannel(message) {
-  axios
+export async function slackChannel(message, slackChannelUrl, slackChannelName) {
+  await axios
     .post(slackChannelUrl, {
       channel: slackChannelName,
       text: message,

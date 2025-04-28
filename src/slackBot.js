@@ -7,6 +7,7 @@ import { telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot, disconnectBot } from "./telegramBotCommands.js";
 import getSymbols, { other_exchange_pair_validate } from "./getSymbols.js";
 import crypto from "crypto";
+import validate_gateway_microservice_status from "./system_status.js";
 import {
   traderUrl,
   slackAppToken,
@@ -122,6 +123,10 @@ async function customMessages(userText, message, say) {
       listOf_pm2_symbols(say);
       break;
     }
+    case "system status": {
+      validate_gateway_microservice_status("bot", say);
+      break;
+    }
     case "other exchange": {
       validateExchangeSymbols(say);
       break;
@@ -167,9 +172,12 @@ async function customMessages(userText, message, say) {
             await validate_kucoin_symbol(userText, say);
             break;
           }
-          default:
-            await say(`*${userText}* - please check the command name (or) enter *help* to see the list of commands`);
+          default: {
+            if (message?.user) {
+              await say(`*${userText}* - please check the command name (or) enter *help* to see the list of commands`);
+            }
             break;
+          }
         }
       } else {
         if (userText.includes("-")) {
@@ -237,11 +245,13 @@ async function helpCommand(say) {
     *pm2_add symbol name* eg(pm2_add ETHUSDT) - To add to pm2 symbols\n
     *pm2_delete symbol name* eg(pm2_delete ETHUSDT) - To delete the symbols from pm2 list\n
     *pm2 symbols* - list of symbols added to pm2\n
+    *system status* - To check *Microservice* & *Gateway* status\n
     *binance BTCUSDT* - To check symbol status in Binance exchange\n
     *mexc BTCUSDT* - To check symbol status in MEXC exchange\n
     *okx BTC-USDT* - To check symbol status in OKX exchange\n
     *kraken BTCUSDT* To check symbol status in Kraken exchange\n
-    *kucoin BTCU-SDT* - To check symbol status in Kraken exchange\n`);
+    *kucoin BTCU-SDT* - To check symbol status in Kraken exchange\n
+    *other exchange* - To validate (Binance, MEXC, Kraken, OKX, kucoin) exchanges symbols status`);
 }
 
 async function listOfDisconnectedSymbols(say) {
