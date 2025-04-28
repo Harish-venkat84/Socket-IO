@@ -6,12 +6,14 @@ import {
   activeSocketsIntervalSeconds,
   socketCandleStickSeconds,
   pm2RestartIntervalSeconds,
+  systemStatusIntervalSeconds,
 } from "./index.js";
 import { getTime, sendAlertMessage, telegramBotCommandStatus } from "./messages.js";
 import { startTelegarmBot } from "./telegramBotCommands.js";
 import { startSlack, manuallyDisconnected, prioritySymbols, disconnectSymbol, disconnectedUser, pm2Symbol, pm2SymbolStatus } from "./slackBot.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 import { alertManager } from "./slack.js";
+import validate_gateway_microservice_status from "./system_status.js";
 
 let listOfSymbols;
 const socketDetails = new Map();
@@ -104,6 +106,10 @@ async function start() {
   }, setIntervalSeconds * 1000);
 
   setInterval(() => validatingCandlestickFeeder(), socketCandleStickSeconds * 1000);
+
+  setInterval(() => validate_gateway_microservice_status(), systemStatusIntervalSeconds * 1000);
+
+  // setInterval(() => pm2Restart(), pm2RestartIntervalSeconds * 1000);
 }
 
 async function validateFeederAndCandlestick() {
@@ -209,22 +215,22 @@ async function socketDisconnected() {
   });
 }
 
-// setInterval(() => {
-//   socketDetails.forEach((socket, url) => {
-//     let { symbol } = getExchangeAndSymbol(url);
-//     if (Date.now() - socket.order_book > pm2RestartIntervalSeconds * 1000) {
-//       if (alertManagerCount === 0 && pm2Symbol.has(symbol.toLowerCase()) && !pm2SymbolStatus.get(symbol.toLowerCase()).status) {
-//         pm2SymbolStatus.set(symbol.toLowerCase(), { status: true });
-//         alertManager();
-//         console.log(
-//           getTime(),
-//           `pm2 restart initiated due to this symbol 'order book' has been down for ${pm2RestartIntervalSeconds / 60} minutes: "${symbol}"`
-//         );
-//         alertManagerCount++;
-//       }
-//     }
-//   });
-// }, pm2RestartIntervalSeconds * 1000);
+function pm2Restart() {
+  socketDetails.forEach((socket, url) => {
+    let { symbol } = getExchangeAndSymbol(url);
+    if (Date.now() - socket.order_book > pm2RestartIntervalSeconds * 1000) {
+      if (alertManagerCount === 0 && pm2Symbol.has(symbol.toLowerCase()) && !pm2SymbolStatus.get(symbol.toLowerCase()).status) {
+        pm2SymbolStatus.set(symbol.toLowerCase(), { status: true });
+        alertManager();
+        console.log(
+          getTime(),
+          `pm2 restart initiated due to this symbol 'order book' has been down for ${pm2RestartIntervalSeconds / 60} minutes: "${symbol}"`
+        );
+        alertManagerCount++;
+      }
+    }
+  });
+}
 
 monitorSockets();
 

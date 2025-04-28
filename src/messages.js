@@ -1,6 +1,6 @@
 import { slackChannel } from "./slack.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
-import { messageApp, feeder, traderUrl, socketIntervalSeconds, socketCandleStickSeconds } from "./index.js";
+import { messageApp, feeder, traderUrl, socketIntervalSeconds, socketCandleStickSeconds, slackChannelUrl, slackChannelName } from "./index.js";
 import { disconnectSymbol, prioritySymbols } from "./slackBot.js";
 import { binanceTradePage } from "./getSymbols.js";
 
@@ -60,7 +60,7 @@ function slackMessage(url, alertMessage) {
       finalMessage = getTime() + `\n⚠️ *"${symbol}" - Socket Disconnected!!* - *${exchange}*\n🔗: ${webUrl}`;
   }
 
-  slackChannel(finalMessage);
+  slackChannel(finalMessage, slackChannelUrl, slackChannelName);
 }
 
 function telegramBotMessage(url, alertMessage) {

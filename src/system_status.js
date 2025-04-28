@@ -1,5 +1,14 @@
 import axios from "axios";
-import { admin_gateway, crm_gateway, trader_gateway, exchange_gateway } from "./index.js";
+import { slackChannel } from "./slack.js";
+import {
+  feeder,
+  admin_gateway,
+  crm_gateway,
+  trader_gateway,
+  exchange_gateway,
+  slackSystemStatusChannelName,
+  slackSystemStatusChannelUrl,
+} from "./index.js";
 
 const micro_services = [
   {
@@ -76,43 +85,65 @@ const micro_services = [
   },
 ];
 
+let exchange = feeder === "staging" ? "PIX-Staging" : feeder === "unicoindcx" ? "UniCoinDCX" : "zebacus";
+let system_status = false;
 const alert_status = new Map();
-let initial_alert_message = false;
 
 for (const value of micro_services) {
-  alert_status.set(value.gateway_microservice, false);
+  alert_status.set(value.gateway_microservice, true);
 }
 
-async function get_system_status(gateway_micro) {
+async function get_system_status(gateway_micro, slackType, say) {
+  const channelUrl = slackSystemStatusChannelUrl;
+  const channelName = slackSystemStatusChannelName;
   try {
     const { data } = await axios.get(gateway_micro.url);
-    if (data?.statusCode === 200 && alert_status.get(gateway_micro.gateway_microservice)) {
-      console.log({ gateway_microservice: gateway_micro.gateway_microservice, statusCode: data.statusCode });
-    } else if (data?.statusCode === 200 && !alert_status.get(gateway_micro.gateway_microservice)) {
-      if (initial_alert_message) {
-        console.log({ gateway_microservice: gateway_micro.gateway_microservice, statusCode: data.statusCode });
+    if (data?.statusCode === 200 && !alert_status.get(gateway_micro.gateway_microservice)) {
+      const message = `✅ ${exchange} - ${gateway_micro.gateway_microservice} issue resolved\n
+      status code: ${data.statusCode}`;
+      if (slackType === "channel") {
+        await slackChannel(message, channelUrl, channelName);
+      } else if (slackType === "bot") {
+        await say(message);
       }
       alert_status.set(gateway_micro.gateway_microservice, true);
     }
   } catch (err) {
     if (err?.response?.data?.statusCode === 500) {
-      console.log(`**Alert ${gateway_micro.gateway_microservice} down!`);
+      const error_message = `❌ ${exchange} - *${gateway_micro.gateway_microservice}* down!\n
+      status code: ${err?.response?.data?.statusCode}\n
+      message: ${err?.response?.data?.message}`;
+      if (slackType === "channel") {
+        await slackChannel(error_message, channelUrl, channelName);
+      } else if (slackType === "bot") {
+        await say(error_message);
+      }
       alert_status.set(gateway_micro.gateway_microservice, false);
+      system_status = true;
     } else {
-      console.error("Error fetching", { gateway_microservice: gateway_micro.gateway_microservice }, err?.response?.data);
+      if (slackType === "channel") {
+        await slackChannel(`Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
+      } else if (slackType === "bot") {
+        await say(`Error fetching: ${gateway_micro.gateway_microservice}`);
+      } else {
+        console.log(`Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
+      }
+      alert_status.set(gateway_micro.gateway_microservice, false);
+      system_status = true;
     }
   }
 }
 
-export default async function validate_gateway_microservice_status() {
+export default async function validate_gateway_microservice_status(slackType = "channel", say) {
+  if (slackType === "bot") {
+    await say("please wait it may take sometime....");
+  }
   for (const value of micro_services) {
-    await get_system_status(value);
+    await get_system_status(value, slackType, say);
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
-
-  initial_alert_message = true;
+  if (slackType === "bot" && !system_status) {
+    await say(`✅ ${exchange} - Gateway & Microservice are working fine`);
+    system_status = false;
+  }
 }
-
-setInterval(async () => {
-  await validate_gateway_microservice_status();
-}, 20000);

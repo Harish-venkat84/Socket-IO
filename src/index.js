@@ -26,6 +26,10 @@ export const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 export const telegramBotChatId = process.env.TELEGRAM_BOT_CHAT_ID;
 export const telegramGroupChatId = process.env.TELEGRAM_GROUP_CHAT_ID;
 
+export const slackSystemStatusChannelUrl = process.env.SLACK_SYSTEM_STATUS_CHANNEL_URL;
+export const slackSystemStatusChannelName = process.env.SLACK_SYSTEM_STATUS_CHANNEL_NAME;
+export const systemStatusIntervalSeconds = process.env.SYSTEM_STATUS_INTERVAL_SECONDS;
+
 export const slackChannelUrl = process.env.SLACK_CHANNEL_URL;
 export const slackChannelName = process.env.SLACK_CHANNEL_NAME;
 
