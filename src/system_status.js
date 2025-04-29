@@ -117,19 +117,19 @@ async function get_system_status(gateway_micro, slackType, say) {
         await slackChannel(error_message, channelUrl, channelName);
       } else if (slackType === "bot") {
         await say(error_message);
+        system_status = true;
       }
       alert_status.set(gateway_micro.gateway_microservice, false);
-      system_status = true;
     } else {
       if (slackType === "channel") {
         await slackChannel(`Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
       } else if (slackType === "bot") {
         await say(`Error fetching: ${gateway_micro.gateway_microservice}`);
+        system_status = true;
       } else {
         console.log(`Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
       }
       alert_status.set(gateway_micro.gateway_microservice, false);
-      system_status = true;
     }
   }
 }
@@ -144,6 +144,6 @@ export default async function validate_gateway_microservice_status(slackType = "
   }
   if (slackType === "bot" && !system_status) {
     await say(`✅ ${exchange} - Gateway & Microservice are working fine`);
-    system_status = false;
   }
+  system_status = false;
 }
