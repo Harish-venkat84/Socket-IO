@@ -124,10 +124,10 @@ async function get_system_status(gateway_micro, slackType, say) {
       if (slackType === "channel") {
         await slackChannel(`Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
       } else if (slackType === "bot") {
-        await say(`Error fetching: ${gateway_micro.gateway_microservice}`);
+        await say(`🔴 Error fetching: ${gateway_micro.gateway_microservice}`);
         system_status = true;
       } else {
-        console.log(`Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
+        console.log(`🔴 Error fetching: ${gateway_micro.gateway_microservice}`, channelUrl, channelName);
       }
       alert_status.set(gateway_micro.gateway_microservice, false);
     }

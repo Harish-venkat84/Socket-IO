@@ -235,10 +235,10 @@ async function customMessages(userText, message, say) {
 async function helpCommand(say) {
   await say(`List of commands:\n
     *status* - Total active socket\n
-    *symbols name* eg(BTCUSDT) - To last updated timestamp for (orderbook, candlestick, ticket)\n
+    *symbols name* eg(BTCUSDT) - To validate last updated timestamp for (orderbook, candlestick, ticket)\n
     *-symbol name* eg(-ETHUSDT) - To manually disconnect the socket for this symbol\n
     *+symbol name* eg(+ETHUSDT) - To re-connect the manually disconnect socket\n
-    *disconnected symbols* - list of symbols manually disconnected by slack user\n
+    *disconnected symbols* - List of symbols manually disconnected by slack user\n
     *add symbol name* eg(add ETHUSDT) - To add to priority symbols for candlestick 60 seconds\n
     *delete symbol name* eg(delete ETHUSDT) - To delete the symbols from priority\n
     *priority symbols* - list of symbols added to priority for candlestick 60 seconds\n
@@ -614,7 +614,7 @@ async function validateExchangeSymbols(say) {
 
   try {
     if (!other_exchange) {
-      await say(`other exchange symbols are fine...`);
+      await say(`✅ other exchange symbols are fine...`);
     } else if (other_exchange_status.size > 0) {
       let results = "";
       for (const [key, value] of other_exchange_status) {
