@@ -3,9 +3,9 @@ import pkg from "@slack/bolt";
 import { WebClient } from "@slack/web-api";
 import { socketDetails, listOfSymbols } from "./socketIO.js";
 import { getExchangeAndSymbol } from "./telegramBot.js";
-import { telegramBotCommandStatus } from "./messages.js";
+import { telegramBotCommandStatus, feederExchanges } from "./messages.js";
 import { startTelegarmBot, disconnectBot } from "./telegramBotCommands.js";
-import getSymbols, { other_exchange_pair_validate } from "./getSymbols.js";
+import getSymbols, { otherExchangePairValidate } from "./getSymbols.js";
 import crypto from "crypto";
 import validate_gateway_microservice_status from "./system_status.js";
 import {
@@ -81,9 +81,10 @@ async function symbolsStatus(userText, say) {
           \nExchange: ${exchange}
           \n📚 Order Book last updated: ${order_book_lastUpdated}
           \n📈 Candlestick last updated: ${candlestick_lastUpdated}
-          \n➤ Ticker last updated: ${ticker_lastUpdated}
+          \n➡️ Ticker last updated: ${ticker_lastUpdated}
           \n📌 Last price: ${last_price}
-          \n🔗 URL: ${traderUrl + symbol}`
+          \n🔗 URL: ${traderUrl + symbol}
+          \n↔️ Feeder exchange: ${feederExchanges(symbol.toUpperCase())}`
       );
       break;
     }
@@ -184,7 +185,11 @@ async function customMessages(userText, message, say) {
           addSymbolsToDisconnect(userText, say, message);
         } else if (userText.includes("+")) {
           deleteSmbolsDisconnectMap(userText, say);
-        } else if (message.user === undefined || userText.includes("joined")) {
+        } else if (disconnectSymbol.has(userText)) {
+            await say(
+              `*${userText.toUpperCase()}*, This symbol socket disconnected by slack user\nTo reconnect use this command "+${userText.toUpperCase()}" or use the *"help"* command to see the list of commands`
+            );
+        }else if (message.user === undefined || userText.includes("joined")) {
           return;
         } else if (!messageStatus) {
           await say(messageSymbolNotPresent(message.text));
@@ -581,10 +586,10 @@ async function validate_kucoin_symbol(userText, say, messageStatus = true) {
 }
 
 async function validateExchangeSymbols(say) {
-  if (other_exchange_pair_validate.size > 0) {
+  if (otherExchangePairValidate.size > 0) {
     other_exchange_status.clear();
     const exchange_symbols = new Set(); // based on the interval I'm clearing the "other_exchange_pair_validate", so that's why I have created "exchange_symbols"
-    other_exchange_pair_validate.forEach((value) => exchange_symbols.add(value));
+    otherExchangePairValidate.forEach((value) => exchange_symbols.add(value));
     await say("please wait it may take sometime....");
     for (const all_symbols of exchange_symbols) {
       if (all_symbols?.BINANCE) {
