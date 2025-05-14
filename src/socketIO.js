@@ -8,9 +8,21 @@ import {
   pm2RestartIntervalSeconds,
   systemStatusIntervalSeconds,
 } from "./index.js";
-import { getTime, sendAlertMessage, telegramBotCommandStatus } from "./messages.js";
+import {
+  getTime,
+  sendAlertMessage,
+  telegramBotCommandStatus,
+} from "./messages.js";
 import { startTelegarmBot } from "./telegramBotCommands.js";
-import { startSlack, manuallyDisconnected, prioritySymbols, disconnectSymbol, disconnectedUser, pm2Symbol, pm2SymbolStatus } from "./slackBot.js";
+import {
+  startSlack,
+  manuallyDisconnected,
+  prioritySymbols,
+  disconnectSymbol,
+  disconnectedUser,
+  pm2Symbol,
+  pm2SymbolStatus,
+} from "./slackBot.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
 import { alertManager } from "./slack.js";
 import validate_gateway_microservice_status from "./system_status.js";
@@ -23,21 +35,30 @@ function connectSockets(url) {
   const socket = io(url, { path: "/feeder" }, { autoConnect: false });
 
   socket.on("connect", () => {
-    console.log(getTime(), "✅ Connected:", url);
-    socketDetails.set(url, {
-      socket: socket,
-      connection: true,
-      lastConnected: getTime(),
-      order_book_status: true,
-      order_book: Date.now(),
-      order_book_lastUpdated: getTime(),
-      candlestick_status: true,
-      candlestick: Date.now(),
-      candlestick_lastUpdated: getTime(),
-      ticker_lastUpdated: getTime(),
-      disconnected: false,
-      last_price: "last price not updated",
-    });
+    if (socketDetails.get(url)?.disconnected !== true) {
+      console.log(getTime(), "✅ Connected:", url);
+      socketDetails.set(url, {
+        socket: socket,
+        connection: true,
+        lastConnected: getTime(),
+        order_book_status: true,
+        order_book: Date.now(),
+        order_book_lastUpdated: getTime(),
+        candlestick_status: true,
+        candlestick: Date.now(),
+        candlestick_lastUpdated: getTime(),
+        ticker_lastUpdated: getTime(),
+        disconnected: false,
+        last_price: "last price not updated",
+      });
+    } else {
+      console.log(getTime(), "✅ <<==>> 🔄 Connected:", url);
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        connection: true,
+        disconnected: false,
+      });
+    }
   });
 
   socket.on("events", (data) => {
@@ -100,14 +121,20 @@ async function start() {
     adminSymbolsValidation();
     socketDisconnected();
     if (count === activeSocketsIntervalSeconds) {
-      telegramBot(`${telegramBotCommandStatus(socketDetails, listOfSymbols)}`, "");
+      telegramBot(
+        `${telegramBotCommandStatus(socketDetails, listOfSymbols)}`,
+        ""
+      );
       count = 0;
     }
   }, setIntervalSeconds * 1000);
 
-  setInterval(() => validatingCandlestickFeeder(), socketCandleStickSeconds * 1000);
+  setInterval(
+    () => validatingCandlestickFeeder(),
+    socketCandleStickSeconds * 1000
+  );
 
-  setInterval(() => validate_gateway_microservice_status(), systemStatusIntervalSeconds * 1000);
+  // setInterval(() => validate_gateway_microservice_status(), systemStatusIntervalSeconds * 1000);
 
   // setInterval(() => pm2Restart(), pm2RestartIntervalSeconds * 1000);
 }
@@ -117,11 +144,20 @@ async function validateFeederAndCandlestick() {
     let { symbol } = getExchangeAndSymbol(url);
     if (Date.now() - socket.order_book > socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookDown");
-      socketDetails.set(url, { ...socketDetails.get(url), order_book_status: false });
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        order_book_status: false,
+      });
       await getBinanceSymbolStatus(url, symbol);
-    } else if (!socket.order_book_status && Date.now() - socket.order_book < socketIntervalSeconds * 1000) {
+    } else if (
+      !socket.order_book_status &&
+      Date.now() - socket.order_book < socketIntervalSeconds * 1000
+    ) {
       sendAlertMessage(url, "orderBookUp");
-      socketDetails.set(url, { ...socketDetails.get(url), order_book_status: true });
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        order_book_status: true,
+      });
       // if (alertManagerCount > 0 && pm2Symbol.has(symbol.toLowerCase()) && pm2SymbolStatus.get(symbol.toLowerCase()).status) {
       //   pm2SymbolStatus.set(symbol.toLowerCase(), { status: false });
       //   alertManagerCount = 0;
@@ -129,12 +165,24 @@ async function validateFeederAndCandlestick() {
       // }
     }
 
-    if (Date.now() - socket.candlestick > socketIntervalSeconds * 1000 && prioritySymbols.has(symbol.toLowerCase())) {
+    if (
+      Date.now() - socket.candlestick > socketIntervalSeconds * 1000 &&
+      prioritySymbols.has(symbol.toLowerCase())
+    ) {
       sendAlertMessage(url, "candlestickDownOneMinute");
-      socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: false });
-    } else if (!socket.candlestick_status && Date.now() - socket.candlestick < socketIntervalSeconds * 1000) {
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        candlestick_status: false,
+      });
+    } else if (
+      !socket.candlestick_status &&
+      Date.now() - socket.candlestick < socketIntervalSeconds * 1000
+    ) {
       sendAlertMessage(url, "candlestickUp");
-      socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: true });
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        candlestick_status: true,
+      });
     }
   });
 }
@@ -142,9 +190,15 @@ async function validateFeederAndCandlestick() {
 function validatingCandlestickFeeder() {
   socketDetails.forEach((socket, url) => {
     let { symbol } = getExchangeAndSymbol(url);
-    if (Date.now() - socket.candlestick > socketCandleStickSeconds * 1000 && !prioritySymbols.has(symbol.toLowerCase())) {
+    if (
+      Date.now() - socket.candlestick > socketCandleStickSeconds * 1000 &&
+      !prioritySymbols.has(symbol.toLowerCase())
+    ) {
       sendAlertMessage(url, "candlestickDown");
-      socketDetails.set(url, { ...socketDetails.get(url), candlestick_status: false });
+      socketDetails.set(url, {
+        ...socketDetails.get(url),
+        candlestick_status: false,
+      });
     }
   });
 }
@@ -159,7 +213,11 @@ async function adminSymbolsValidation() {
       socketDetails.get(url).socket.disconnect();
       socketDetails.delete(url);
       if (manuallyDisconnected.get(symbol.toLowerCase())?.disconnected) {
-        console.log(getTime(), "user manually disconnected the socket for this symbol", url);
+        console.log(
+          getTime(),
+          "user manually disconnected the socket for this symbol",
+          url
+        );
         manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: false });
       } else {
         sendAlertMessage(url, "symbolChanges");
@@ -192,11 +250,19 @@ async function adminSymbolsValidation() {
       connectSockets(url);
       let { symbol } = getExchangeAndSymbol(url);
       if (manuallyDisconnected.get(symbol.toLowerCase())?.disconnected) {
-        console.log(getTime(), "user manually re-connected the socket for this symbol", url);
+        console.log(
+          getTime(),
+          "user manually re-connected the socket for this symbol",
+          url
+        );
         manuallyDisconnected.set(symbol.toLowerCase(), { disconnected: false });
       } else {
         sendAlertMessage(url, "newSymbol");
-        console.log(getTime(), "🚀 New symbol has been added to the exchange. WebSocket connections updated -", url);
+        console.log(
+          getTime(),
+          "🚀 New symbol has been added to the exchange. WebSocket connections updated -",
+          url
+        );
       }
     }
   });
@@ -219,12 +285,18 @@ function pm2Restart() {
   socketDetails.forEach((socket, url) => {
     let { symbol } = getExchangeAndSymbol(url);
     if (Date.now() - socket.order_book > pm2RestartIntervalSeconds * 1000) {
-      if (alertManagerCount === 0 && pm2Symbol.has(symbol.toLowerCase()) && !pm2SymbolStatus.get(symbol.toLowerCase()).status) {
+      if (
+        alertManagerCount === 0 &&
+        pm2Symbol.has(symbol.toLowerCase()) &&
+        !pm2SymbolStatus.get(symbol.toLowerCase()).status
+      ) {
         pm2SymbolStatus.set(symbol.toLowerCase(), { status: true });
         alertManager();
         console.log(
           getTime(),
-          `pm2 restart initiated due to this symbol 'order book' has been down for ${pm2RestartIntervalSeconds / 60} minutes: "${symbol}"`
+          `pm2 restart initiated due to this symbol 'order book' has been down for ${
+            pm2RestartIntervalSeconds / 60
+          } minutes: "${symbol}"`
         );
         alertManagerCount++;
       }
