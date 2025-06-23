@@ -25,9 +25,9 @@ export default async function getSymbols() {
       }
     );
     if (status === 200) {
-      otherExchangePairValidate.clear();
-      symbolsArray.clear();
       if (data?.data) {
+        symbolsArray.clear();
+        otherExchangePairValidate.clear();
         const symbols = data?.data || [];
         symbols.forEach((item) => {
           if (
@@ -71,42 +71,6 @@ export default async function getSymbols() {
     );
   }
 }
-
-// export default async function getSymbols() {
-//   set_symbols_base_quote.clear();
-//   other_exchange_pair_validate.clear();
-//   symbolsArray = new Set(
-//     await axios.get(traderSymbolApi).then((response) =>
-//       response?.data?.data
-//         .filter((symbol) => symbol?.spot && symbol?.is_active && !symbol?.is_new)
-//         .map((data) => {
-//           if (data?.external_exchanges?.BINANCE === true) {
-//             set_symbols_base_quote.add({ symbol: data.symbol, base_asset: data.base_asset, quote_asset: data.quote_asset });
-//           }
-//           if (data?.external_exchanges) {
-//             other_exchange_pair_validate.add({
-//               symbol: data.symbol,
-//               base_asset: data.base_asset,
-//               quote_asset: data.quote_asset,
-//               ...data.external_exchanges,
-//             });
-//           }
-//           return data.symbol;
-//         })
-//     )
-//   );
-
-//   if (disconnectSymbol.size > 0) {
-//     let addurl = new Set();
-//     disconnectSymbol.forEach((value) => {
-//       addurl.add(value.toUpperCase());
-//     });
-
-//     return new Set([...symbolsArray].filter((value) => !addurl.has(value)).map((value) => socketUrl + "feeder-" + value.toUpperCase()));
-//   }
-
-//   return new Set([...symbolsArray].map((value) => socketUrl + "feeder-" + value.toUpperCase()));
-// }
 
 export async function getLogoUrl() {
   try {

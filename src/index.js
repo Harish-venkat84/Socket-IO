@@ -71,3 +71,5 @@ export const okxSymbolsUrl = process.env.OKX_SYMBOLS_URL;
 export const kucoinSymbolsUrl = process.env.KUCOIN_SYMBOLS_URL;
 
 export const krakenSymbolsUrl = process.env.KRAKEN_SYMBOLS_URL;
+
+export const setPrioritySymbols = process.env.PRIORITY_SYMBOL;
