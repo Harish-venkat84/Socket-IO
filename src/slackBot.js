@@ -664,23 +664,23 @@ async function validateExchangeSymbols(say) {
       if (all_symbols?.BINANCE) {
         const pair = `binance ${all_symbols?.symbol}`;
         await validateBinanceSymbols(pair, say, false);
-        // await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 300));
       } else if (all_symbols?.OKX) {
         const pair = `okx ${all_symbols?.base_asset}-${all_symbols?.quote_asset}`;
         await validate_okx_symbols(pair, say, false);
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       } else if (all_symbols?.MEXC) {
         const pair = `mexc ${all_symbols?.symbol}`;
         await validateMexcSymbols(pair, say, false);
-        // await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       } else if (all_symbols?.KRAKEN) {
         const pair = `kraken ${all_symbols?.symbol}`;
         await validate_kraken_symbols(pair, say, false);
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       } else if (all_symbols?.KUCOIN) {
         const pair = `kucoin ${all_symbols?.base_asset}-${all_symbols?.quote_asset}`;
         await validate_kucoin_symbol(pair, say, false);
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
     exchange_symbols.clear();
