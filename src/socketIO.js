@@ -57,7 +57,10 @@ function connectSockets(url) {
         ...socketDetails.get(url),
         connection: true,
         disconnected: false,
+        candlestick_status: true,
+        order_book_status: true,
       });
+      console.log(`✅ <<==>> 🔄 ${url} +++++>>>`, socketDetails.get(url));
     }
   });
 
