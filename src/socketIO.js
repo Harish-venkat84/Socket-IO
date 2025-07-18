@@ -143,8 +143,12 @@ async function start() {
 }
 
 async function validateFeederAndCandlestick() {
+  const envPrioritySymbols = new Set(JSON.parse(setPrioritySymbols));
   socketDetails.forEach(async (socket, url) => {
     let { symbol } = getExchangeAndSymbol(url);
+    if (envPrioritySymbols.has(symbol) && !prioritySymbols.has(symbol)) {
+      prioritySymbols.add(symbol);
+    }
     if (Date.now() - socket.order_book > socketIntervalSeconds * 1000) {
       sendAlertMessage(url, "orderBookDown");
       socketDetails.set(url, {
@@ -170,7 +174,7 @@ async function validateFeederAndCandlestick() {
 
     if (
       Date.now() - socket.candlestick > socketIntervalSeconds * 1000 &&
-      prioritySymbols.has(symbol.toLowerCase())
+      prioritySymbols.has(symbol)
     ) {
       sendAlertMessage(url, "candlestickDownOneMinute");
       socketDetails.set(url, {
@@ -195,7 +199,7 @@ function validatingCandlestickFeeder() {
     let { symbol } = getExchangeAndSymbol(url);
     if (
       Date.now() - socket.candlestick > socketCandleStickSeconds * 1000 &&
-      !prioritySymbols.has(symbol.toLowerCase())
+      !prioritySymbols.has(symbol)
     ) {
       sendAlertMessage(url, "candlestickDown");
       socketDetails.set(url, {
@@ -240,8 +244,8 @@ async function adminSymbolsValidation() {
           });
         }
 
-        if (prioritySymbols.has(symbol.toLowerCase())) {
-          prioritySymbols.delete(symbol.toLowerCase());
+        if (prioritySymbols.has(symbol)) {
+          prioritySymbols.delete(symbol);
         }
       }
     }

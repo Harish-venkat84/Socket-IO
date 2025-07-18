@@ -306,9 +306,9 @@ async function deleteSmbolsDisconnectMap(userText, say) {
 async function addPrioritySymbols(userText, say) {
   (await getSymbols()).forEach(async (value) => {
     let { symbol } = getExchangeAndSymbol(value);
-    if (symbol.toLowerCase() === userText.split(" ")[1]) {
+    if (symbol === userText.split(" ")[1].toUpperCase()) {
       addedPrioritySymbols = true;
-      prioritySymbols.add(userText.split(" ")[1]);
+      prioritySymbols.add(userText.split(" ")[1].toUpperCase());
       await say(`*${userText.split(" ")[1].toUpperCase()}* Added`);
     }
   });
