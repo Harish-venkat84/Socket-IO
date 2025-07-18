@@ -7,6 +7,7 @@ import {
   socketCandleStickSeconds,
   pm2RestartIntervalSeconds,
   systemStatusIntervalSeconds,
+  setPrioritySymbols,
 } from "./index.js";
 import {
   getTime,
