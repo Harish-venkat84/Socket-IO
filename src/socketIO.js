@@ -121,6 +121,14 @@ async function start() {
   setInterval(() => {
     count++;
     console.log(getTime(), "🔍 Checking for inactive sockets...");
+     socketDetails.forEach((socket, url) => {
+      let { symbol } = getExchangeAndSymbol(url);
+      const updatedTime = {
+        candlestick_lastUpdated: socket.candlestick_lastUpdated,
+        order_book_lastUpdated: socket.order_book_lastUpdated,
+      };
+      console.log(symbol, "<<==========>>", updatedTime);
+    });
     validateFeederAndCandlestick();
     adminSymbolsValidation();
     socketDisconnected();
