@@ -153,7 +153,7 @@ async function start() {
 }
 let alertSent = 0; // reload feeder after 2 mins
 let addFeederReloadSymbols = [];
-const feederReloadSymbols = new Set(JSON.parse(feederReloadSymbols));
+const ReloadSymbols = new Set(JSON.parse(feederReloadSymbols));
 async function validateFeederAndCandlestick() {
   const envPrioritySymbols = new Set(JSON.parse(setPrioritySymbols));
   socketDetails.forEach(async (socket, url) => {
@@ -169,8 +169,8 @@ async function validateFeederAndCandlestick() {
       });
       await getBinanceSymbolStatus(url, symbol);
 
-      if(feederReloadSymbols.has(symbol.toLowerCase())){
-        addFeederReloadSymbols.push(symbol.toLowerCase());
+      if(ReloadSymbols.has(symbol) && !addFeederReloadSymbols.includes(symbol)){
+        addFeederReloadSymbols.push(symbol);
       }
 
     } else if (
