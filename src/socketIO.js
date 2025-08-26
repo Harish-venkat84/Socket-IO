@@ -8,6 +8,7 @@ import {
   pm2RestartIntervalSeconds,
   systemStatusIntervalSeconds,
   setPrioritySymbols,
+  feederReloadSymbols,
 } from "./index.js";
 import {
   getTime,
@@ -25,7 +26,7 @@ import {
   pm2SymbolStatus,
 } from "./slackBot.js";
 import { getExchangeAndSymbol, telegramBot } from "./telegramBot.js";
-import { alertManager } from "./slack.js";
+import { alertManager, reloadFeeder } from "./slack.js";
 import validate_gateway_microservice_status from "./system_status.js";
 
 let listOfSymbols;
@@ -150,7 +151,9 @@ async function start() {
 
   // setInterval(() => pm2Restart(), pm2RestartIntervalSeconds * 1000);
 }
-
+let alertSent = 0; // reload feeder after 2 mins
+let addFeederReloadSymbols = [];
+const feederReloadSymbols = new Set(JSON.parse(feederReloadSymbols));
 async function validateFeederAndCandlestick() {
   const envPrioritySymbols = new Set(JSON.parse(setPrioritySymbols));
   socketDetails.forEach(async (socket, url) => {
@@ -165,6 +168,11 @@ async function validateFeederAndCandlestick() {
         order_book_status: false,
       });
       await getBinanceSymbolStatus(url, symbol);
+
+      if(feederReloadSymbols.has(symbol.toLowerCase())){
+        addFeederReloadSymbols.push(symbol.toLowerCase());
+      }
+
     } else if (
       !socket.order_book_status &&
       Date.now() - socket.order_book < socketIntervalSeconds * 1000
@@ -201,6 +209,15 @@ async function validateFeederAndCandlestick() {
       });
     }
   });
+
+  if(addFeederReloadSymbols.length){
+    alertSent++;
+    if(alertSent === 2){
+      alertSent = 0;
+      addFeederReloadSymbols = []
+      await reloadFeeder();
+    }
+  }
 }
 
 function validatingCandlestickFeeder() {

@@ -73,3 +73,6 @@ export const kucoinSymbolsUrl = process.env.KUCOIN_SYMBOLS_URL;
 export const krakenSymbolsUrl = process.env.KRAKEN_SYMBOLS_URL;
 
 export const setPrioritySymbols = process.env.PRIORITY_SYMBOL;
+
+export const feederReloadUrl = process.env.FEEDER_RELOAD_URL;
+export const feederReloadSymbols = process.env.FEEDER_RELOAD_SYMBOLS;

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { prometheusAlertmanager } from "./index.js";
+import { prometheusAlertmanager, feederReloadUrl } from "./index.js";
 
 export async function slackChannel(message, slackChannelUrl, slackChannelName) {
   await axios
@@ -45,4 +45,17 @@ export function alertManager() {
         console.error("Response Body:", err.response.data);
       }
     });
+}
+
+export async function reloadFeeder() {
+  try {
+    const response = await axios.post(feederReloadUrl, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("Feeder reload response:", response.data);
+  } catch (error) {
+    console.error("Error reloading feeder:", error.message);
+  }
 }
