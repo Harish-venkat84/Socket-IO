@@ -153,6 +153,7 @@ async function start() {
 }
 let alertSent = 0; // reload feeder after 2 mins
 let addFeederReloadSymbols = [];
+let restartOnces = true
 const ReloadSymbols = new Set(JSON.parse(feederReloadSymbols));
 async function validateFeederAndCandlestick() {
   const envPrioritySymbols = new Set(JSON.parse(setPrioritySymbols));
@@ -182,6 +183,12 @@ async function validateFeederAndCandlestick() {
         ...socketDetails.get(url),
         order_book_status: true,
       });
+
+      if(ReloadSymbols.has(symbol)){
+        restartOnces = true
+      }
+
+
       // if (alertManagerCount > 0 && pm2Symbol.has(symbol.toLowerCase()) && pm2SymbolStatus.get(symbol.toLowerCase()).status) {
       //   pm2SymbolStatus.set(symbol.toLowerCase(), { status: false });
       //   alertManagerCount = 0;
@@ -210,9 +217,10 @@ async function validateFeederAndCandlestick() {
     }
   });
 
-  if(addFeederReloadSymbols.length){
+  if(addFeederReloadSymbols.length && restartOnces){
     alertSent++;
     if(alertSent === 2){
+      restartOnces = false
       alertSent = 0;
       addFeederReloadSymbols = []
       await reloadFeeder();
